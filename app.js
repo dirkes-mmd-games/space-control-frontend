@@ -1,9 +1,9 @@
-const createClient = window.supabase?.createClient;
+const createClient = window.supabaseClient?.createClient;
 if (!createClient) throw new Error("Supabase-Bibliothek konnte nicht geladen werden.");
 
 const config = window.SPACE_CONTROL_CONFIG;
 const $ = (id) => document.getElementById(id);
-const supabase = createClient(config.supabaseUrl, config.supabaseAnonKey, {
+const supabaseClient = createClient(config.supabaseUrl, config.supabaseAnonKey, {
   auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: true }
 });
 
@@ -36,10 +36,10 @@ function setBusy(button, busy, label) {
   if (label) button.textContent = label;
 }
 async function ensureIdentity() {
-  let { data: { session }, error } = await supabase.auth.getSession();
+  let { data: { session }, error } = await supabaseClient.auth.getSession();
   if (error) throw error;
   if (!session) {
-    const result = await supabase.auth.signInAnonymously();
+    const result = await supabaseClient.auth.signInAnonymously();
     if (result.error) throw result.error;
     session = result.data.session;
   }
@@ -48,7 +48,7 @@ async function ensureIdentity() {
   return session;
 }
 async function invoke(name, body) {
-  const { data, error } = await supabase.functions.invoke(name, { body });
+  const { data, error } = await supabaseClient.functions.invoke(name, { body });
   if (error) {
     let message = error.message || "Backend-Aufruf fehlgeschlagen";
     try {
@@ -87,7 +87,7 @@ async function checkPlayerStatus() {
   try {
     // Never infer a player's game from an unrelated old request.
     // The active session is set only after this browser submits this invite.
-    const query = supabase.from("join_requests")
+    const query = supabaseClient.from("join_requests")
       .select("session_id,nickname,status,requested_at")
       .eq("user_id", currentUser.id)
       .eq("session_id", savedSession)
@@ -107,7 +107,7 @@ async function checkPlayerStatus() {
       $("player-panel").classList.remove("hidden");
       $("player-name").textContent = request.nickname;
       $("player-state").textContent = "Du bist für diese Partie freigegeben.";
-      const { data: member, error: memberError } = await supabase
+      const { data: member, error: memberError } = await supabaseClient
         .from("session_members").select("id").eq("session_id", request.session_id)
         .eq("user_id", currentUser.id).eq("status", "active").maybeSingle();
       if (memberError) throw memberError;
@@ -120,7 +120,7 @@ async function checkPlayerStatus() {
         notice("join-notice", "error", "Für diese Partie wurde keine aktive Spielteilnahme gefunden. Bitte sende eine neue Beitrittsanfrage.");
         return;
       }
-      const { data: sessionInfo, error: sessionError } = await supabase
+      const { data: sessionInfo, error: sessionError } = await supabaseClient
         .from("game_sessions").select("id,display_name,status").eq("id", request.session_id).maybeSingle();
       if (sessionError) throw sessionError;
       if (sessionInfo) {
@@ -130,7 +130,7 @@ async function checkPlayerStatus() {
           ? "Die Partie wurde gestartet. Viel Erfolg!"
           : "Du bist freigegeben. Die Spielleitung startet die Partie, sobald sie bereit ist.";
       }
-      const { data: account, error: accountError } = await supabase
+      const { data: account, error: accountError } = await supabaseClient
         .from("accounts").select("balance").eq("session_id", request.session_id)
         .eq("member_id", member.id).maybeSingle();
       if (accountError) throw accountError;
@@ -192,7 +192,7 @@ async function loadRequests() {
   if (!sessionId) return;
   const list = $("request-list");
   try {
-    const { data, error } = await supabase
+    const { data, error } = await supabaseClient
       .from("join_requests")
       .select("id,nickname,requested_at,status")
       .eq("session_id", sessionId)
@@ -238,9 +238,9 @@ async function loadRoster() {
   if (!sessionId) return;
   try {
     const [{ data: members, error: memberError }, { data: accounts, error: accountError }, { data: session, error: sessionError }] = await Promise.all([
-      supabase.from("session_members").select("id,nickname,status,joined_at").eq("session_id", sessionId).order("joined_at", { ascending: true }),
-      supabase.from("accounts").select("member_id,balance").eq("session_id", sessionId),
-      supabase.from("game_sessions").select("status,max_members").eq("id", sessionId).maybeSingle()
+      supabaseClient.from("session_members").select("id,nickname,status,joined_at").eq("session_id", sessionId).order("joined_at", { ascending: true }),
+      supabaseClient.from("accounts").select("member_id,balance").eq("session_id", sessionId),
+      supabaseClient.from("game_sessions").select("status,max_members").eq("id", sessionId).maybeSingle()
     ]);
     if (memberError) throw memberError;
     if (accountError) throw accountError;
@@ -295,7 +295,7 @@ async function startSession() {
   setBusy(button, true, "Partie wird gestartet …");
   clearNotice("roster-notice");
   try {
-    const { data, error } = await supabase.rpc("start_session", { p_session_id: sessionId });
+    const { data, error } = await supabaseClient.rpc("start_session", { p_session_id: sessionId });
     if (error) throw error;
     notice("roster-notice", "ok", "Partie gestartet. Die Spielerhandys erhalten die Änderung automatisch.");
     await loadRoster();
@@ -368,7 +368,7 @@ $("player-leave").addEventListener("click", async () => {
   if (!window.confirm("Möchtest du diese Partie wirklich verlassen? Dein Kontostand und die Buchungshistorie bleiben erhalten.")) return;
   setBusy($("player-leave"), true, "Austritt wird ausgeführt …");
   try {
-    const { data, error } = await supabase.rpc("leave_own_session", { p_session_id: playerSessionId });
+    const { data, error } = await supabaseClient.rpc("leave_own_session", { p_session_id: playerSessionId });
     if (error) throw error;
     localStorage.removeItem("spaceControl.playerSessionId");
     localStorage.removeItem("spaceControl.playerNickname");
