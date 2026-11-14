@@ -41,10 +41,20 @@ Die Demonstratorpartie hat maximal drei Spieler. Der Spielleiter zählt nicht au
 - Bestätigung, Teilnehmeranlage und Kontoerstellung erfolgen atomar und idempotent.
 - Die normale Spieleransicht berücksichtigt keine Admin-Sonderrechte; sie zeigt nur die eigenen vertraulichen Spielerdaten.
 
+## Einladung und QR-Code
+
+- Nur Dirk als Partie-Admin kann eine Einladung erzeugen.
+- Das Backend erstellt einen kryptografisch zufälligen Token mit 256 Bit Entropie.
+- Gespeichert wird ausschließlich der SHA-256-Hash; der Klartext-Token wird dem Admin nur bei der Erstellung zurückgegeben.
+- Die Einladung ist 24 Stunden gültig und auf die maximale Spielerzahl der Partie begrenzt (im Demonstrator drei Nutzungen).
+- Eine neu erzeugte Einladung widerruft zuvor aktive Einladungen derselben Partie. Dadurch ist immer nur der zuletzt ausgegebene QR-Code gültig.
+- Das Backend liefert den Token, nicht eine fest codierte Webadresse. Das Browser-Frontend ergänzt den Token zur passenden Beitrittsroute und erzeugt daraus den QR-Code.
+- Die spätere Beitrittsfunktion prüft Hash, Ablaufzeit, Widerruf und Nutzungslimit serverseitig.
+
 ## Konsequenz für die Backend-Funktionen
 
 - `create_session`: Partie anlegen und Ersteller als Partie-Admin eintragen; **keine** Spieleranlage.
-- `create_session_invite`: gemeinsamen QR-Code-Einladungslink erzeugen.
+- `create_session_invite`: sicheren Einladungstoken erzeugen und den QR-Code-Client mit den dafür nötigen Daten versorgen.
 - `request_session_join`: Anfrage für jeden der drei Spieler entgegennehmen.
 - `approve_join_request`: bestätigten Spieler und Startkonto atomar anlegen.
 - `reject_join_request`: Anfrage ablehnen, ohne Teilnehmer oder Konto anzulegen.
