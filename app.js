@@ -59,13 +59,15 @@ async function invoke(name, body) {
   if (data?.error) throw new Error(data.error);
   return data;
 }
-function showAdmin(sessionIdValue) {
+function showAdmin(sessionIdValue, displayName = "") {
   sessionId = sessionIdValue;
+  if (displayName) localStorage.setItem("spaceControl.adminSessionName", displayName);
+  const savedName = displayName || localStorage.getItem("spaceControl.adminSessionName") || "Partie";
   localStorage.setItem("spaceControl.adminSessionId", sessionId);
   $("admin-create").classList.add("hidden");
   $("resume-panel").classList.add("hidden");
   $("admin-panel").classList.remove("hidden");
-  $("session-state").textContent = "Partie " + sessionId.slice(0, 8);
+  $("session-state").textContent = savedName + " · " + sessionId;
   loadRequests();
   if (adminPollHandle) clearInterval(adminPollHandle);
   adminPollHandle = setInterval(() => { if (!document.hidden) loadRequests(); }, 5000);
@@ -318,6 +320,8 @@ $("join-form").addEventListener("submit", async (event) => {
       nickname: $("nickname").value.trim()
     });
     const request = data.join_request;
+    if (request?.session_name) $("join-session-name").textContent = request.session_name;
+    if (request?.session_id) $("join-session-id").textContent = request.session_id;
     notice("join-notice", "ok", request?.already_requested
       ? "Deine Beitrittsanfrage ist bereits offen. Die Spielleitung muss sie noch freigeben."
       : "Deine Beitrittsanfrage wurde gesendet. Du bist nach der Freigabe durch die Spielleitung dabei.");
@@ -342,6 +346,19 @@ async function boot() {
       $("admin-create").classList.add("hidden");
       $("connection").textContent = "Einladung erkannt · Spielerbeitritt";
       $("resume-panel").classList.add("hidden");
+      $("join-session-name").textContent = "Partie wird geladen …";
+      $("join-session-id").textContent = "–";
+      try {
+        const inviteInfo = await invoke("get_session_invite_info", { token: currentToken });
+        $("join-session-name").textContent = inviteInfo.session.display_name;
+        $("join-session-id").textContent = inviteInfo.session.id;
+        localStorage.setItem("spaceControl.pendingInviteSessionId", inviteInfo.session.id);
+        localStorage.setItem("spaceControl.pendingInviteSessionName", inviteInfo.session.display_name);
+      } catch (error) {
+        $("join-session-name").textContent = "Einladung nicht verfügbar";
+        $("join-session-id").textContent = "–";
+        notice("join-notice", "error", error.message);
+      }
       $("admin-panel").classList.add("hidden");
       // A QR scan must always show the join form first. Do not poll an old
       // session belonging to this browser before the player submits this invite.
