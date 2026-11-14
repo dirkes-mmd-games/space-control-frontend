@@ -58,6 +58,15 @@
         <h2 style="margin-top:12px">Beitrittsanfragen</h2><p class="muted">Offene Anfragen werden hier angezeigt. Erst deine Freigabe legt Spieler und Konto mit 1.000 Credits an.</p>
         <div id="request-list" class="request-list"><div class="empty">Noch keine Anfragen geladen.</div></div>
         <div id="request-notice" class="notice" role="status" aria-live="polite"></div>
+        <h2 style="margin-top:22px">Angemeldete Spieler</h2>
+        <p class="muted" id="roster-count">Spielerliste wird geladen …</p>
+        <div id="roster-list" class="request-list"><div class="empty">Spielerliste wird geladen …</div></div>
+        <div class="start-box" style="margin-top:18px">
+          <strong>Spielbeginn</strong>
+          <p class="muted" id="start-info">Warte auf angemeldete Spieler.</p>
+          <button id="start-session" class="wide" disabled>Partie starten</button>
+        </div>
+        <div id="roster-notice" class="notice" role="status" aria-live="polite"></div>
       </div>
     </section>
     <section id="resume-panel" class="panel hidden" style="margin-top:18px"><div class="section-head"><div><span class="tag">Gespeicherte Partie</span><h2 style="margin-top:12px">Spielleitung fortsetzen</h2></div><button id="new-session" class="secondary">Neue Partie</button></div><p class="muted">In diesem Browser ist bereits eine Partie hinterlegt. Du kannst die Spielleitung fortsetzen oder eine neue Partie anlegen.</p><button id="resume-session" class="wide">Gespeicherte Partie öffnen</button></section>
