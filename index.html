@@ -25,8 +25,11 @@
       <span class="tag">Spielerbereich</span>
       <h2 style="margin-top:12px">Willkommen, <span id="player-name">Spieler</span></h2>
       <p class="muted" id="player-state">Deine Teilnahme wird geprüft …</p>
+      <div class="status-line">Aktuelle Partie: <strong id="player-session-name">–</strong></div>
+      <div class="status-line">Partienummer: <strong id="player-session-id">–</strong></div>
       <div class="status-line">Dein Kontostand: <strong id="player-balance">1.000 Credits</strong></div>
       <button id="player-refresh" class="secondary wide">Status aktualisieren</button>
+      <button id="player-leave" class="danger wide">Partie verlassen</button>
       <div id="player-notice" class="notice" role="status" aria-live="polite"></div>
     </section>
     <section id="admin-create" class="panel">
