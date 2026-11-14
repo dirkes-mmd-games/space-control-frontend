@@ -24,10 +24,10 @@ declare
   v_user_id uuid := auth.uid();
   v_token_hash text;
   v_invite_id uuid;
+  v_session_id uuid;
   v_invite public.session_invites%rowtype;
   v_session public.game_sessions%rowtype;
   v_request_id uuid;
-  v_existing_nickname text;
 begin
   if v_user_id is null then
     raise exception 'Authentication required' using errcode = '28000';
@@ -49,7 +49,7 @@ begin
   -- Discover the session, then lock rows in the same order as invite creation:
   -- session first, invite second. This avoids lock-order deadlocks.
   select i.id, i.session_id
-    into v_invite_id, v_session.id
+    into v_invite_id, v_session_id
     from public.session_invites i
    where i.token_hash = v_token_hash;
 
@@ -60,7 +60,7 @@ begin
   select *
     into v_session
     from public.game_sessions s
-   where s.id = v_session.id
+   where s.id = v_session_id
    for update;
 
   if not found then
@@ -71,7 +71,7 @@ begin
     into v_invite
     from public.session_invites i
    where i.id = v_invite_id
-     and i.session_id = v_session.id
+     and i.session_id = v_session_id
      and i.token_hash = v_token_hash
    for update;
 
@@ -101,9 +101,37 @@ begin
      and jr.status = 'pending';
 
   if found then
+    -- A fresh valid QR scan refreshes the invite reference for an existing
+    -- pending request, so replacing an old QR does not strand that request.
+    if lower((select jr.nickname from public.join_requests jr where jr.id = v_request_id))
+       <> lower(btrim(p_nickname)) then
+      if exists (
+        select 1 from public.session_members m
+         where m.session_id = v_session.id
+           and m.status = 'active'
+           and lower(m.nickname) = lower(btrim(p_nickname))
+      ) or exists (
+        select 1 from public.join_requests jr
+         where jr.session_id = v_session.id
+           and jr.status = 'pending'
+           and jr.id <> v_request_id
+           and lower(jr.nickname) = lower(btrim(p_nickname))
+      ) then
+        raise exception 'Nickname is already in use for this session'
+          using errcode = '23505';
+      end if;
+    end if;
+
+    update public.join_requests
+       set invite_id = v_invite.id,
+           nickname = btrim(p_nickname)
+     where id = v_request_id;
+
     return jsonb_build_object(
       'request_id', v_request_id,
       'session_id', v_session.id,
+      'session_name', v_session.display_name,
+      'nickname', btrim(p_nickname),
       'status', 'pending',
       'already_requested', true
     );
@@ -159,6 +187,7 @@ begin
   return jsonb_build_object(
     'request_id', v_request_id,
     'session_id', v_session.id,
+    'session_name', v_session.display_name,
     'nickname', btrim(p_nickname),
     'status', 'pending',
     'already_requested', false
