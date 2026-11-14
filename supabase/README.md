@@ -49,11 +49,37 @@ Die Funktion authentifiziert den Aufrufer über sein Supabase-Access-Token und
 ruft die Datenbankfunktion `public.create_session` auf. Der Aufrufer wird als
 Partie-Admin eingetragen, aber noch nicht als Spieler angelegt.
 
+## Edge Function: create_session_invite
+
+Datei: `functions/create_session_invite/index.ts`
+
+Aufruf: `POST /functions/v1/create_session_invite`
+
+Beispiel-JSON:
+
+```json
+{
+  "session_id": "<UUID der Partie>"
+}
+```
+
+Die Funktion prüft die authentifizierte Identität und lässt die Datenbankfunktion
+`public.create_session_invite` die Adminberechtigung kontrollieren. Sie erzeugt
+einen kryptografisch zufälligen Token mit 256 Bit Entropie. In der Datenbank
+wird ausschließlich der SHA-256-Hash gespeichert; der Klartext-Token wird dem
+Admin einmalig in der Antwort zurückgegeben. Die Einladung läuft nach 24 Stunden
+ab und hat eine Nutzungshöchstzahl entsprechend `max_members` der Partie.
+
+Wird ein neuer QR-Code erzeugt, werden vorherige noch aktive Einladungen dieser
+Partie widerrufen. Der Client setzt den zurückgegebenen Token in die Beitritts-URL
+ein und rendert daraus den QR-Code. Die konkrete Frontend-URL wird nicht im
+Backend fest verdrahtet.
+
 ## Noch nicht enthalten
 
 Die Backend-Funktionen für folgende Abläufe sind noch zu implementieren:
 
-- Einladungscode und QR-Beitrittslink erzeugen
+- Beitrittsanfrage stellen und durch Dirk bestätigen/ablehnen
 - Beitrittsanfrage stellen und durch Dirk bestätigen/ablehnen
 - Teilnehmer und Startkonto bei bestätigtem Beitritt atomar anlegen
 - Credits atomar übertragen
