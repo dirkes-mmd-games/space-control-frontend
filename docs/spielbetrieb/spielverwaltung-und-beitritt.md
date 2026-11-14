@@ -56,8 +56,8 @@ Die Demonstratorpartie hat maximal drei Spieler. Der Spielleiter zählt nicht au
 - `create_session`: Partie anlegen und Ersteller als Partie-Admin eintragen; **keine** Spieleranlage.
 - `create_session_invite`: sicheren Einladungstoken erzeugen und den QR-Code-Client mit den dafür nötigen Daten versorgen.
 - `request_session_join`: Einladungstoken prüfen und eine offene Beitrittsanfrage mit der verwendeten Einladung verknüpfen. Eine Anfrage verbraucht noch keinen Spielerplatz; das geschieht erst bei der Freigabe.
-- `approve_join_request`: bestätigten Spieler und Startkonto atomar anlegen.
-- `reject_join_request`: Anfrage ablehnen, ohne Teilnehmer oder Konto anzulegen.
+- `approve_join_request`: Anfrage als Admin atomar freigeben, Spieler und Konto mit 1.000 Credits anlegen, Eröffnungsbuchung protokollieren und Einladung zählen.
+- `reject_join_request`: Anfrage als Admin ablehnen und Entscheidung protokollieren, ohne Teilnehmer oder Konto anzulegen.
 
 ## Technische Details der Beitrittsanfrage
 
@@ -68,6 +68,15 @@ Die Demonstratorpartie hat maximal drei Spieler. Der Spielleiter zählt nicht au
 - Nicknames offener Anfragen sind innerhalb einer Partie ebenfalls eindeutig (ohne Beachtung der Groß-/Kleinschreibung).
 - Ein erneuter Scan mit einem gültigen neuen QR-Code aktualisiert die Einladung einer bereits offenen Anfrage.
 - Die Einladung wird beim Antrag noch nicht verbraucht. Ihre Nutzung wird erst bei der späteren atomaren Freigabe gezählt.
+
+## Technische Umsetzung der Admin-Entscheidung
+
+- Beide Entscheidungen sind ausschließlich für authentifizierte Partie-Admins möglich.
+- Die Freigabe prüft die Einladung erneut. Wurde der QR-Code inzwischen ersetzt oder ist die Einladung abgelaufen, muss der Spieler den aktuellen QR-Code erneut scannen.
+- Die Freigabe sperrt die Partie, die Anfrage und die Einladung in konsistenter Reihenfolge, damit parallele Freigaben keinen Spielerplatz doppelt vergeben.
+- Spieleranlage, Konto mit 1.000 Credits, Eröffnungsbuchung, Einladungszähler, Anfrageentscheidung und Audit-Eintrag erfolgen in einer Datenbanktransaktion.
+- Ein wiederholter Freigabeaufruf erzeugt kein zweites Konto und keine zweite Eröffnungsbuchung.
+- Eine Ablehnung erzeugt keinen Spieler und kein Konto; sie protokolliert Admin und Entscheidungszeitpunkt.
 
 ## Abnahmekriterien
 
