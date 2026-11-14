@@ -315,6 +315,7 @@ async function boot() {
     if (currentToken) {
       $("join-panel").classList.remove("hidden");
       $("admin-create").classList.add("hidden");
+      $("connection").textContent = "Einladung erkannt · Spielerbeitritt";
       $("resume-panel").classList.add("hidden");
       $("admin-panel").classList.add("hidden");
       const pendingToken = localStorage.getItem("spaceControl.pendingJoinToken");
