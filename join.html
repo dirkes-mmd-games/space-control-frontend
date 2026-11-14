@@ -6,17 +6,31 @@
   <meta name="theme-color" content="#0a101b">
   <meta name="description" content="Space Control – Partie erstellen und Spieler einladen">
   <title>Space Control – Spielerbeitritt</title>
-  <link rel="stylesheet" href="./styles.css?v=20261114-join3">
+  <link rel="stylesheet" href="./styles.css?v=20261114-join4">
   <script src="./config.js"></script>
+  <script>
+    window.addEventListener("error", function (event) {
+      const status = document.getElementById("connection");
+      const notice = document.getElementById("join-notice");
+      if (status) status.textContent = "Startfehler";
+      if (notice) { notice.className = "notice show error"; notice.textContent = "Die Anwendung konnte nicht vollständig starten: " + (event.message || "Unbekannter JavaScript-Fehler"); }
+    });
+    window.addEventListener("unhandledrejection", function (event) {
+      const status = document.getElementById("connection");
+      const notice = document.getElementById("join-notice");
+      if (status) status.textContent = "Verbindungsfehler";
+      if (notice) { notice.className = "notice show error"; notice.textContent = "Verbindung fehlgeschlagen: " + (event.reason?.message || String(event.reason || "Unbekannter Fehler")); }
+    });
+  </script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js" defer></script>
-  <script src="./app.js?v=20261114-9" defer></script>
+  <script src="./app.js?v=20261114-10" defer></script>
 </head>
 <body class="join-mode">
   <main class="shell">
     <header class="top"><div class="brand">MMD GAMES · HYBRID PLAY</div><div class="connection" id="connection">Verbindung wird aufgebaut …</div></header>
     <section class="hero"><span class="tag">Browser-Demonstrator</span><h1>SPACE CONTROL</h1><p>Eine Partie am Laptop vorbereiten, den gemeinsamen QR-Code teilen und Beitritte einzeln freigeben. Die Spieler nutzen dafür einfach den Browser auf ihrem Smartphone.</p></section>
-    <section id="join-panel" class="panel hidden">
+    <section id="join-panel" class="panel">
       <span class="tag">Spielerbeitritt</span><h2 style="margin-top:12px">Du wurdest eingeladen</h2>
       <p class="muted">Du möchtest dieser Partie beitreten:</p>
       <div class="status-line">Partiename: <strong id="join-session-name">Partie wird geladen …</strong></div>
