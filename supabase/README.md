@@ -68,7 +68,7 @@ Die Funktion prüft die authentifizierte Identität und lässt die Datenbankfunk
 einen kryptografisch zufälligen Token mit 256 Bit Entropie. In der Datenbank
 wird ausschließlich der SHA-256-Hash gespeichert; der Klartext-Token wird dem
 Admin einmalig in der Antwort zurückgegeben. Die Einladung läuft nach 24 Stunden
-ab und hat eine Nutzungshöchstzahl entsprechend `max_members` der Partie.
+ab und erlaubt höchstens so viele bestätigte Beitritte wie `max_members` der Partie. Die spätere Freigabefunktion zählt die Nutzung atomar bei der Bestätigung, nicht bereits beim Stellen einer Anfrage.
 
 Wird ein neuer QR-Code erzeugt, werden vorherige noch aktive Einladungen dieser
 Partie widerrufen. Der Client setzt den zurückgegebenen Token in die Beitritts-URL
@@ -79,7 +79,6 @@ Backend fest verdrahtet.
 
 Die Backend-Funktionen für folgende Abläufe sind noch zu implementieren:
 
-- Beitrittsanfrage stellen und durch Dirk bestätigen/ablehnen
 - Beitrittsanfrage stellen und durch Dirk bestätigen/ablehnen
 - Teilnehmer und Startkonto bei bestätigtem Beitritt atomar anlegen
 - Credits atomar übertragen
