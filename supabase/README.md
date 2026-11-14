@@ -105,15 +105,55 @@ Wichtig: Das Stellen einer Anfrage verbraucht noch keinen Spielerplatz und
 erhöht nicht `use_count` der Einladung. Die Zählung muss erst bei der späteren,
 atomaren Admin-Freigabe erfolgen.
 
+## Edge Function: approve_join_request
+
+Datei: `functions/approve_join_request/index.ts`
+
+Aufruf: `POST /functions/v1/approve_join_request`
+
+Beispiel-JSON:
+
+```json
+{
+  "request_id": "<UUID der Beitrittsanfrage>"
+}
+```
+
+Nur ein Partie-Admin kann eine offene Anfrage freigeben. Die Datenbankfunktion
+führt die Freigabe vollständig atomar aus: Sie prüft Partie, Anfrage, Adminrecht,
+Einladung, Ablauf/Widerruf und freien Spielerplatz. Danach legt sie den Spieler
+und sein Konto mit 1.000 Credits an, schreibt eine Eröffnungsbuchung ins
+Transaktionsjournal, erhöht den Einladungszähler und markiert die Anfrage als
+`approved`. Bei einem Fehler wird die gesamte Transaktion zurückgerollt.
+Ein wiederholter Aufruf einer bereits freigegebenen Anfrage liefert das
+bestehende Ergebnis zurück, ohne ein zweites Konto oder eine zweite Buchung
+anzulegen.
+
+## Edge Function: reject_join_request
+
+Datei: `functions/reject_join_request/index.ts`
+
+Aufruf: `POST /functions/v1/reject_join_request`
+
+Beispiel-JSON:
+
+```json
+{
+  "request_id": "<UUID der Beitrittsanfrage>"
+}
+```
+
+Nur ein Partie-Admin kann eine offene Anfrage ablehnen. Die Anfrage wird mit
+Zeitpunkt und Admin-Identität auf `rejected` gesetzt und die Entscheidung im
+Admin-Audit-Log protokolliert. Es wird weder ein Spieler noch ein Konto angelegt;
+die Einladung wird nicht belastet. Eine wiederholte Ablehnung ist idempotent.
+
 ## Noch nicht enthalten
 
 Die Backend-Funktionen für folgende Abläufe sind noch zu implementieren:
 
-- Beitrittsanfrage durch Dirk bestätigen oder ablehnen
-- Teilnehmer und Startkonto bei bestätigtem Beitritt atomar anlegen
 - Credits atomar übertragen
 - Geheime Karte atomar ziehen
-- Adminzugriffe protokollieren
 
 Für kritische Aktionen gibt es bewusst keine direkten Schreib-Policies für
 Browser-Clients. Schreibzugriffe müssen über geprüfte Edge Functions oder
