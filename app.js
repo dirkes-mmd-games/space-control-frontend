@@ -1,4 +1,4 @@
-const createClient = window.supabaseClient?.createClient;
+const createClient = window.supabase?.createClient;
 if (!createClient) throw new Error("Supabase-Bibliothek konnte nicht geladen werden.");
 
 const config = window.SPACE_CONTROL_CONFIG;
