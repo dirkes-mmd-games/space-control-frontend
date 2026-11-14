@@ -73,12 +73,15 @@ async function checkPlayerStatus() {
   if (!currentUser) return;
   const savedSession = localStorage.getItem("spaceControl.playerSessionId") || "";
   try {
-    let query = supabase.from("join_requests")
+    // Never infer a player's game from an unrelated old request.
+    // The active session is set only after this browser submits this invite.
+    if (!savedSession) return;
+    const query = supabase.from("join_requests")
       .select("session_id,nickname,status,requested_at")
       .eq("user_id", currentUser.id)
+      .eq("session_id", savedSession)
       .order("requested_at", { ascending: false })
       .limit(1);
-    if (savedSession) query = query.eq("session_id", savedSession);
     const { data, error } = await query;
     if (error) throw error;
     const request = data?.[0];
@@ -102,7 +105,8 @@ async function checkPlayerStatus() {
         localStorage.removeItem("spaceControl.playerNickname");
         localStorage.removeItem("spaceControl.pendingJoinToken");
         $("player-panel").classList.add("hidden");
-        $("admin-create").classList.remove("hidden");
+        $("join-panel").classList.remove("hidden");
+        notice("join-notice", "error", "Für diese Partie wurde keine aktive Spielteilnahme gefunden. Bitte sende eine neue Beitrittsanfrage.");
         return;
       }
       const { data: sessionInfo, error: sessionError } = await supabase
@@ -298,7 +302,8 @@ $("join-form").addEventListener("submit", async (event) => {
       ? "Deine Beitrittsanfrage ist bereits offen. Die Spielleitung muss sie noch freigeben."
       : "Deine Beitrittsanfrage wurde gesendet. Du bist nach der Freigabe durch die Spielleitung dabei.");
     localStorage.setItem("spaceControl.pendingJoinToken", currentToken);
-    localStorage.setItem("spaceControl.playerNickname", $("nickname").value.trim());
+    localStorage.setItem("spaceControl.playerSessionId", request.session_id);
+    localStorage.setItem("spaceControl.playerNickname", request.nickname || $("nickname").value.trim());
     $("join-form").classList.add("hidden");
     startPlayerPolling();
   } catch (error) {
@@ -318,9 +323,15 @@ async function boot() {
       $("connection").textContent = "Einladung erkannt · Spielerbeitritt";
       $("resume-panel").classList.add("hidden");
       $("admin-panel").classList.add("hidden");
+      // A QR scan must always show the join form first. Do not poll an old
+      // session belonging to this browser before the player submits this invite.
+      $("join-form").classList.remove("hidden");
       const pendingToken = localStorage.getItem("spaceControl.pendingJoinToken");
-      if (pendingToken === currentToken) $("join-form").classList.add("hidden");
-      startPlayerPolling();
+      if (pendingToken === currentToken) {
+        $("join-form").classList.add("hidden");
+        notice("join-notice", "info", "Deine Beitrittsanfrage wurde bereits gesendet. Bitte warte auf die Freigabe durch die Spielleitung.");
+        startPlayerPolling();
+      }
       return;
     }
     if (savedPlayerSession) {
