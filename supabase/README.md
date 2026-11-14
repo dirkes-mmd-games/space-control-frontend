@@ -75,11 +75,41 @@ Partie widerrufen. Der Client setzt den zurückgegebenen Token in die Beitritts-
 ein und rendert daraus den QR-Code. Die konkrete Frontend-URL wird nicht im
 Backend fest verdrahtet.
 
+## Edge Function: request_session_join
+
+Datei: `functions/request_session_join/index.ts`
+
+Aufruf: `POST /functions/v1/request_session_join`
+
+Beispiel-JSON:
+
+```json
+{
+  "token": "<64-stelliger Einladungstoken>",
+  "nickname": "Spielername"
+}
+```
+
+Die Funktion verlangt eine angemeldete Supabase-Identität. Das Backend hasht
+den übermittelten Token und prüft Einladung, Ablaufzeit, Widerruf, Nutzungsgrenze
+und Partiestatus. Anschließend wird eine Beitrittsanfrage mit Status `pending`
+angelegt und mit der verwendeten Einladung verknüpft. Der Token selbst wird
+nicht in der Anfrage gespeichert.
+
+Eine erneute Anfrage derselben Identität erzeugt keinen zweiten offenen Antrag.
+Bei erneutem Scan mit einem gültigen neuen QR-Code wird die bestehende offene
+Anfrage auf die aktuelle Einladung umgestellt. Nicknames sind innerhalb einer
+Partie ohne Beachtung der Groß-/Kleinschreibung eindeutig.
+
+Wichtig: Das Stellen einer Anfrage verbraucht noch keinen Spielerplatz und
+erhöht nicht `use_count` der Einladung. Die Zählung muss erst bei der späteren,
+atomaren Admin-Freigabe erfolgen.
+
 ## Noch nicht enthalten
 
 Die Backend-Funktionen für folgende Abläufe sind noch zu implementieren:
 
-- Beitrittsanfrage stellen und durch Dirk bestätigen/ablehnen
+- Beitrittsanfrage durch Dirk bestätigen oder ablehnen
 - Teilnehmer und Startkonto bei bestätigtem Beitritt atomar anlegen
 - Credits atomar übertragen
 - Geheime Karte atomar ziehen
