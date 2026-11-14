@@ -46,7 +46,7 @@ Die Demonstratorpartie hat maximal drei Spieler. Der Spielleiter zählt nicht au
 - Nur Dirk als Partie-Admin kann eine Einladung erzeugen.
 - Das Backend erstellt einen kryptografisch zufälligen Token mit 256 Bit Entropie.
 - Gespeichert wird ausschließlich der SHA-256-Hash; der Klartext-Token wird dem Admin nur bei der Erstellung zurückgegeben.
-- Die Einladung ist 24 Stunden gültig und auf die maximale Spielerzahl der Partie begrenzt (im Demonstrator drei Nutzungen).
+- Die Einladung ist 24 Stunden gültig und erlaubt höchstens so viele bestätigte Beitritte wie die maximale Spielerzahl der Partie (im Demonstrator drei). Die Nutzung wird erst bei der späteren Bestätigung gezählt, nicht schon bei einer offenen oder abgelehnten Anfrage.
 - Eine neu erzeugte Einladung widerruft zuvor aktive Einladungen derselben Partie. Dadurch ist immer nur der zuletzt ausgegebene QR-Code gültig.
 - Das Backend liefert den Token, nicht eine fest codierte Webadresse. Das Browser-Frontend ergänzt den Token zur passenden Beitrittsroute und erzeugt daraus den QR-Code.
 - Die spätere Beitrittsfunktion prüft Hash, Ablaufzeit, Widerruf und Nutzungslimit serverseitig.
