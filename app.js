@@ -142,8 +142,8 @@ async function createInvite() {
   const data = await invoke("create_session_invite", { session_id: sessionId });
   const invite = data.invite;
   if (!invite?.token) throw new Error("Das Backend hat keinen Einladungstoken geliefert.");
-  const url = new URL(location.pathname, location.origin);
-  url.hash = new URLSearchParams({ join: invite.token }).toString();
+  const url = new URL("./join.html", location.href);
+  url.searchParams.set("join", invite.token);
   inviteUrl = url.toString();
   $("qr-code").replaceChildren();
   if (!window.QRCode) throw new Error("Der QR-Code-Dienst konnte nicht geladen werden. Bitte Seite neu laden.");
