@@ -32,7 +32,21 @@ Deno.serve(async (req: Request) => {
     .from("session_invites")
     .select("session_id,expires_at,revoked_at,use_count,max_uses")
     .eq("token_hash", tokenHash).maybeSingle();
-  if (inviteError) return respond(500, { error: "Could not read invitation" });
+  if (inviteError) {
+    console.error("get_session_invite_info invitation query failed", {
+      code: inviteError.code,
+      message: inviteError.message,
+      details: inviteError.details,
+      hint: inviteError.hint,
+    });
+    return respond(500, {
+      error: "Could not read invitation",
+      diagnostic: {
+        code: inviteError.code ?? "unknown",
+        message: inviteError.message ?? "Unknown database error",
+      },
+    });
+  }
   if (!invite || invite.revoked_at || new Date(invite.expires_at).getTime() <= Date.now() ||
       invite.use_count >= invite.max_uses) return respond(404, { error: "Invitation is invalid, expired, or full" });
   const { data: session, error: sessionError } = await admin
