@@ -4,3 +4,7 @@
 body.join-mode #admin-create,
 body.join-mode #admin-panel,
 body.join-mode #resume-panel { display: none !important; }
+
+.start-box{border:1px solid #355174;border-radius:14px;padding:14px;background:rgba(35,57,82,.35)}
+.start-box>strong{display:block;font-size:15px}
+.start-box .muted{font-size:13px;line-height:1.5}
