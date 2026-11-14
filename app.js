@@ -8,7 +8,13 @@ const supabase = createClient(config.supabaseUrl, config.supabaseAnonKey, {
 
 let sessionId = localStorage.getItem("spaceControl.adminSessionId") || "";
 let inviteUrl = "";
-let currentToken = new URLSearchParams(location.search).get("join") || "";
+function readInviteToken() {
+  const queryToken = new URLSearchParams(location.search).get("join");
+  const hashText = location.hash.startsWith("#") ? location.hash.slice(1) : location.hash;
+  const hashParams = new URLSearchParams(hashText);
+  return queryToken || hashParams.get("join") || "";
+}
+let currentToken = readInviteToken();
 let currentUser = null;
 let playerPollHandle = null;
 let adminPollHandle = null;
@@ -137,7 +143,7 @@ async function createInvite() {
   const invite = data.invite;
   if (!invite?.token) throw new Error("Das Backend hat keinen Einladungstoken geliefert.");
   const url = new URL(location.pathname, location.origin);
-  url.searchParams.set("join", invite.token);
+  url.hash = new URLSearchParams({ join: invite.token }).toString();
   inviteUrl = url.toString();
   $("qr-code").replaceChildren();
   if (!window.QRCode) throw new Error("Der QR-Code-Dienst konnte nicht geladen werden. Bitte Seite neu laden.");
