@@ -197,8 +197,8 @@ $("join-form").addEventListener("submit", async (event) => {
     notice("join-notice", "ok", request?.already_requested
       ? "Deine Beitrittsanfrage ist bereits offen. Die Spielleitung muss sie noch freigeben."
       : "Deine Beitrittsanfrage wurde gesendet. Du bist nach der Freigabe durch die Spielleitung dabei.");
+    localStorage.setItem("spaceControl.pendingJoinToken", currentToken);
     $("join-form").classList.add("hidden");
-    history.replaceState({}, "", location.pathname);
   } catch (error) {
     notice("join-notice", "error", error.message);
   } finally {
@@ -212,6 +212,11 @@ async function boot() {
     if (currentToken) {
       $("join-panel").classList.remove("hidden");
       $("admin-create").classList.add("hidden");
+      const pendingToken = localStorage.getItem("spaceControl.pendingJoinToken");
+      if (pendingToken === currentToken) {
+        $("join-form").classList.add("hidden");
+        notice("join-notice", "info", "Deine Beitrittsanfrage wurde bereits gesendet. Bitte warte auf die Freigabe durch die Spielleitung.");
+      }
       $("resume-panel").classList.add("hidden");
       $("admin-panel").classList.add("hidden");
       return;
