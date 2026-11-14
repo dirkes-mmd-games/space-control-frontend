@@ -74,8 +74,9 @@ function showAdmin(sessionIdValue, displayName = "") {
   $("admin-panel").classList.remove("hidden");
   $("session-state").textContent = savedName + " · " + sessionId;
   loadRequests();
+  loadRoster();
   if (adminPollHandle) clearInterval(adminPollHandle);
-  adminPollHandle = setInterval(() => { if (!document.hidden) loadRequests(); }, 5000);
+  adminPollHandle = setInterval(() => { if (!document.hidden) { loadRequests(); loadRoster(); } }, 5000);
 }
 async function checkPlayerStatus() {
   if (!currentUser || playerStatusCheckInFlight) return;
@@ -119,11 +120,14 @@ async function checkPlayerStatus() {
         return;
       }
       const { data: sessionInfo, error: sessionError } = await supabase
-        .from("game_sessions").select("id,display_name").eq("id", request.session_id).maybeSingle();
+        .from("game_sessions").select("id,display_name,status").eq("id", request.session_id).maybeSingle();
       if (sessionError) throw sessionError;
       if (sessionInfo) {
         $("player-session-name").textContent = sessionInfo.display_name;
         $("player-session-id").textContent = sessionInfo.id;
+        $("player-state").textContent = sessionInfo.status === "active"
+          ? "Die Partie wurde gestartet. Viel Erfolg!"
+          : "Du bist freigegeben. Die Spielleitung startet die Partie, sobald sie bereit ist.";
       }
       const { data: account, error: accountError } = await supabase
         .from("accounts").select("balance").eq("session_id", request.session_id)
@@ -131,7 +135,6 @@ async function checkPlayerStatus() {
       if (accountError) throw accountError;
       if (account) $("player-balance").textContent = Number(account.balance).toLocaleString("de-DE") + " Credits";
       notice("player-notice", "ok", "Teilnahme bestätigt. Du kannst diese Seite jederzeit erneut öffnen.");
-      if (playerPollHandle) { clearInterval(playerPollHandle); playerPollHandle = null; }
     } else if (request.status === "pending") {
       $("join-panel").classList.remove("hidden");
       $("join-form").classList.add("hidden");
@@ -228,6 +231,77 @@ async function loadRequests() {
   } catch (error) {
     notice("request-notice", "error", "Anfragen konnten nicht geladen werden: " + error.message);
   }
+  await loadRoster();
+}
+async function loadRoster() {
+  if (!sessionId) return;
+  try {
+    const [{ data: members, error: memberError }, { data: accounts, error: accountError }, { data: session, error: sessionError }] = await Promise.all([
+      supabase.from("session_members").select("id,nickname,status,joined_at").eq("session_id", sessionId).order("joined_at", { ascending: true }),
+      supabase.from("accounts").select("member_id,balance").eq("session_id", sessionId),
+      supabase.from("game_sessions").select("status,max_members").eq("id", sessionId).maybeSingle()
+    ]);
+    if (memberError) throw memberError;
+    if (accountError) throw accountError;
+    if (sessionError) throw sessionError;
+
+    const balanceByMember = new Map((accounts || []).map(account => [account.member_id, account.balance]));
+    const activeMembers = (members || []).filter(member => member.status === "active");
+    const target = Number(session?.max_members || 0);
+    const missing = Math.max(0, target - activeMembers.length);
+    $("roster-count").textContent = activeMembers.length + " von " + target + " Spielern angemeldet";
+    $("roster-list").replaceChildren();
+
+    if (!activeMembers.length) {
+      const empty = document.createElement("div");
+      empty.className = "empty";
+      empty.textContent = "Noch keine Spieler freigegeben.";
+      $("roster-list").append(empty);
+    } else {
+      for (const member of activeMembers) {
+        const item = document.createElement("div");
+        item.className = "request";
+        const details = document.createElement("div");
+        const name = document.createElement("strong");
+        name.textContent = member.nickname;
+        const meta = document.createElement("small");
+        meta.textContent = "Angemeldet · " + Number(balanceByMember.get(member.id) ?? 0).toLocaleString("de-DE") + " Credits";
+        details.append(name, meta);
+        item.append(details);
+        $("roster-list").append(item);
+      }
+    }
+
+    if (session?.status === "active") {
+      $("start-session").disabled = true;
+      $("start-session").textContent = "Partie läuft";
+      $("start-info").textContent = "Die Partie wurde gestartet. Alle Spieler wechseln automatisch in den gestarteten Spielzustand.";
+    } else {
+      $("start-session").disabled = activeMembers.length < 2;
+      $("start-session").textContent = "Partie starten";
+      $("start-info").textContent = activeMembers.length < 2
+        ? "Zum Start werden mindestens 2 freigegebene Spieler benötigt. Aktuell fehlt noch " + (2 - activeMembers.length) + " Spieler."
+        : (missing > 0
+            ? "Es fehlen noch " + missing + (missing === 1 ? " Mitspieler" : " Mitspieler") + " bis zur gewünschten Besetzung. Du kannst mit den bereits angemeldeten Spielern trotzdem starten."
+            : "Alle vorgesehenen Spielerplätze sind besetzt. Die Partie kann gestartet werden.");
+    }
+  } catch (error) {
+    notice("roster-notice", "error", "Spielerliste konnte nicht geladen werden: " + error.message);
+  }
+}
+async function startSession() {
+  const button = $("start-session");
+  setBusy(button, true, "Partie wird gestartet …");
+  clearNotice("roster-notice");
+  try {
+    const { data, error } = await supabase.rpc("start_session", { p_session_id: sessionId });
+    if (error) throw error;
+    notice("roster-notice", "ok", "Partie gestartet. Die Spielerhandys erhalten die Änderung automatisch.");
+    await loadRoster();
+  } catch (error) {
+    notice("roster-notice", "error", "Partie konnte nicht gestartet werden: " + error.message);
+    setBusy(button, false, "Partie starten");
+  }
 }
 async function decideRequest(requestId, decision, button) {
   clearNotice("request-notice");
@@ -239,6 +313,7 @@ async function decideRequest(requestId, decision, button) {
       ? "Spieler freigegeben. Das Spielerkonto wurde mit 1.000 Credits angelegt."
       : "Beitrittsanfrage abgelehnt.");
     await loadRequests();
+    await loadRoster();
   } catch (error) {
     notice("request-notice", "error", error.message);
     setBusy(button, false, decision === "approve" ? "Freigeben" : "Ablehnen");
@@ -283,7 +358,8 @@ $("copy-link").addEventListener("click", async () => {
   }
 });
 
-$("refresh-requests").addEventListener("click", loadRequests);
+$("refresh-requests").addEventListener("click", () => { loadRequests(); loadRoster(); });
+$("start-session").addEventListener("click", startSession);
 $("player-refresh").addEventListener("click", checkPlayerStatus);
 $("player-leave").addEventListener("click", async () => {
   const playerSessionId = localStorage.getItem("spaceControl.playerSessionId");
