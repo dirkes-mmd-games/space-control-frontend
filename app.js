@@ -52,7 +52,12 @@ async function invoke(name, body) {
     let message = error.message || "Backend-Aufruf fehlgeschlagen";
     try {
       const payload = await error.context?.json();
-      if (payload?.error) message = payload.error;
+      if (payload?.error) {
+        message = payload.error;
+        if (payload?.diagnostic?.code || payload?.diagnostic?.message) {
+          message += " (" + [payload.diagnostic.code, payload.diagnostic.message].filter(Boolean).join(": ") + ")";
+        }
+      }
     } catch {}
     throw new Error(message);
   }
