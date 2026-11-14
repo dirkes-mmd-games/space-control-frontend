@@ -17,7 +17,10 @@
     <section class="hero"><span class="tag">Browser-Demonstrator</span><h1>SPACE CONTROL</h1><p>Eine Partie am Laptop vorbereiten, den gemeinsamen QR-Code teilen und Beitritte einzeln freigeben. Die Spieler nutzen dafür einfach den Browser auf ihrem Smartphone.</p></section>
     <section id="join-panel" class="panel hidden">
       <span class="tag">Spielerbeitritt</span><h2 style="margin-top:12px">Du wurdest eingeladen</h2>
-      <p class="muted">Wähle deinen Nickname. Deine Anfrage wird an die Spielleitung gesendet. Du bist erst nach der Freigabe Teil der Partie.</p>
+      <p class="muted">Du möchtest dieser Partie beitreten:</p>
+      <div class="status-line">Partiename: <strong id="join-session-name">Partie wird geladen …</strong></div>
+      <div class="status-line">Partienummer: <strong id="join-session-id">–</strong></div>
+      <p class="muted">Wähle anschließend deinen Nickname. Deine Anfrage wird an die Spielleitung gesendet. Du bist erst nach der Freigabe Teil der Partie.</p>
       <form id="join-form"><label class="field" for="nickname">Dein Nickname</label><input id="nickname" name="nickname" minlength="2" maxlength="20" autocomplete="nickname" placeholder="z. B. Captain Nova" required><button class="wide" id="join-submit" type="submit">Beitrittsanfrage senden</button></form>
       <div id="join-notice" class="notice" role="status" aria-live="polite"></div>
     </section>
