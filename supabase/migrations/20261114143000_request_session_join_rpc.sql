@@ -154,6 +154,15 @@ begin
       using errcode = '23505';
   end if;
 
+  if (
+    select count(*)
+      from public.session_members m
+     where m.session_id = v_session.id
+       and m.status = 'active'
+  ) >= v_session.max_members then
+    raise exception 'Session is already full' using errcode = '22023';
+  end if;
+
   insert into public.join_requests
     (session_id, user_id, nickname, status, invite_id)
   values
@@ -172,9 +181,16 @@ begin
        and jr.status = 'pending';
 
     if v_request_id is not null then
+      update public.join_requests
+         set invite_id = v_invite.id,
+             nickname = btrim(p_nickname)
+       where id = v_request_id;
+
       return jsonb_build_object(
         'request_id', v_request_id,
         'session_id', v_session.id,
+        'session_name', v_session.display_name,
+        'nickname', btrim(p_nickname),
         'status', 'pending',
         'already_requested', true
       );
