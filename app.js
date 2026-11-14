@@ -91,13 +91,26 @@ async function checkPlayerStatus() {
         .from("session_members").select("id").eq("session_id", request.session_id)
         .eq("user_id", currentUser.id).eq("status", "active").maybeSingle();
       if (memberError) throw memberError;
-      if (member) {
-        const { data: account, error: accountError } = await supabase
-          .from("accounts").select("balance").eq("session_id", request.session_id)
-          .eq("member_id", member.id).maybeSingle();
-        if (accountError) throw accountError;
-        if (account) $("player-balance").textContent = Number(account.balance).toLocaleString("de-DE") + " Credits";
+      if (!member) {
+        localStorage.removeItem("spaceControl.playerSessionId");
+        localStorage.removeItem("spaceControl.playerNickname");
+        localStorage.removeItem("spaceControl.pendingJoinToken");
+        $("player-panel").classList.add("hidden");
+        $("admin-create").classList.remove("hidden");
+        return;
       }
+      const { data: sessionInfo, error: sessionError } = await supabase
+        .from("game_sessions").select("id,display_name").eq("id", request.session_id).maybeSingle();
+      if (sessionError) throw sessionError;
+      if (sessionInfo) {
+        $("player-session-name").textContent = sessionInfo.display_name;
+        $("player-session-id").textContent = sessionInfo.id;
+      }
+      const { data: account, error: accountError } = await supabase
+        .from("accounts").select("balance").eq("session_id", request.session_id)
+        .eq("member_id", member.id).maybeSingle();
+      if (accountError) throw accountError;
+      if (account) $("player-balance").textContent = Number(account.balance).toLocaleString("de-DE") + " Credits";
       notice("player-notice", "ok", "Teilnahme bestätigt. Du kannst diese Seite jederzeit erneut öffnen.");
       if (playerPollHandle) { clearInterval(playerPollHandle); playerPollHandle = null; }
     } else if (request.status === "pending") {
@@ -235,6 +248,26 @@ $("copy-link").addEventListener("click", async () => {
 
 $("refresh-requests").addEventListener("click", loadRequests);
 $("player-refresh").addEventListener("click", checkPlayerStatus);
+$("player-leave").addEventListener("click", async () => {
+  const playerSessionId = localStorage.getItem("spaceControl.playerSessionId");
+  if (!playerSessionId) return;
+  if (!window.confirm("Möchtest du diese Partie wirklich verlassen? Dein Kontostand und die Buchungshistorie bleiben erhalten.")) return;
+  setBusy($("player-leave"), true, "Austritt wird ausgeführt …");
+  try {
+    const { data, error } = await supabase.rpc("leave_own_session", { p_session_id: playerSessionId });
+    if (error) throw error;
+    localStorage.removeItem("spaceControl.playerSessionId");
+    localStorage.removeItem("spaceControl.playerNickname");
+    localStorage.removeItem("spaceControl.pendingJoinToken");
+    if (playerPollHandle) { clearInterval(playerPollHandle); playerPollHandle = null; }
+    $("player-panel").classList.add("hidden");
+    $("admin-create").classList.remove("hidden");
+    notice("create-notice", "ok", "Du hast die Partie verlassen. Dein Konto und deine Buchungshistorie bleiben erhalten.");
+  } catch (error) {
+    notice("player-notice", "error", "Austritt nicht möglich: " + error.message);
+    setBusy($("player-leave"), false, "Partie verlassen");
+  }
+});
 $("resume-session").addEventListener("click", () => showAdmin(sessionId));
 $("new-session").addEventListener("click", () => {
   localStorage.removeItem("spaceControl.adminSessionId");
