@@ -55,9 +55,19 @@ Die Demonstratorpartie hat maximal drei Spieler. Der Spielleiter zählt nicht au
 
 - `create_session`: Partie anlegen und Ersteller als Partie-Admin eintragen; **keine** Spieleranlage.
 - `create_session_invite`: sicheren Einladungstoken erzeugen und den QR-Code-Client mit den dafür nötigen Daten versorgen.
-- `request_session_join`: Anfrage für jeden der drei Spieler entgegennehmen.
+- `request_session_join`: Einladungstoken prüfen und eine offene Beitrittsanfrage mit der verwendeten Einladung verknüpfen. Eine Anfrage verbraucht noch keinen Spielerplatz; das geschieht erst bei der Freigabe.
 - `approve_join_request`: bestätigten Spieler und Startkonto atomar anlegen.
 - `reject_join_request`: Anfrage ablehnen, ohne Teilnehmer oder Konto anzulegen.
+
+## Technische Details der Beitrittsanfrage
+
+- Der Spieler sendet den 64-stelligen Token und seinen Nickname über eine authentifizierte Edge Function.
+- Das Backend speichert nur die Referenz auf die Einladung (`invite_id`), niemals den Klartext-Token.
+- Tokenprüfung, Einladungsstatus und Partiestatus werden serverseitig geprüft.
+- Pro Benutzer und Partie ist höchstens eine offene Anfrage möglich.
+- Nicknames offener Anfragen sind innerhalb einer Partie ebenfalls eindeutig (ohne Beachtung der Groß-/Kleinschreibung).
+- Ein erneuter Scan mit einem gültigen neuen QR-Code aktualisiert die Einladung einer bereits offenen Anfrage.
+- Die Einladung wird beim Antrag noch nicht verbraucht. Ihre Nutzung wird erst bei der späteren atomaren Freigabe gezählt.
 
 ## Abnahmekriterien
 
