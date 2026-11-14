@@ -3,93 +3,51 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="theme-color" content="#10151f">
-  <meta name="description" content="Space Control – Spieleranmeldung">
-  <title>Space Control – Spieleranmeldung</title>
-  <style>
-    :root { color-scheme: dark; font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
-    * { box-sizing: border-box; }
-    body { margin: 0; min-height: 100vh; display: grid; place-items: center; padding: 24px; background: radial-gradient(circle at top, #26344a, #10151f 58%); color: #f8fafc; }
-    main { width: min(100%, 440px); padding: 30px; border: 1px solid #344256; border-radius: 22px; background: rgba(20, 29, 43, .96); box-shadow: 0 24px 70px #0008; }
-    .mark { font-size: 13px; letter-spacing: .2em; color: #93c5fd; font-weight: 700; }
-    h1 { margin: 12px 0 8px; font-size: clamp(28px, 7vw, 38px); }
-    p { color: #b8c4d5; line-height: 1.5; }
-    label { display: block; margin: 24px 0 8px; font-weight: 650; }
-    input { width: 100%; padding: 14px 15px; border: 1px solid #526176; border-radius: 11px; background: #0d1420; color: white; font: inherit; font-size: 16px; }
-    input:focus { outline: 2px solid #60a5fa; outline-offset: 2px; }
-    button { width: 100%; margin-top: 14px; padding: 14px; border: 0; border-radius: 11px; background: #2563eb; color: white; font: inherit; font-weight: 700; font-size: 16px; cursor: pointer; }
-    button:disabled { opacity: .55; cursor: wait; }
-    .hint { font-size: 13px; margin-top: 8px; color: #aab7c8; }
-    .result { display: none; margin-top: 20px; padding: 16px; border-radius: 12px; line-height: 1.5; overflow-wrap: anywhere; }
-    .success { display: block; border: 1px solid #287a55; background: #103324; color: #d1fae5; }
-    .error { display: block; border: 1px solid #99434b; background: #3a1c24; color: #ffe4e6; }
-    footer { margin-top: 24px; font-size: 12px; color: #91a0b4; line-height: 1.5; }
-  </style>
+  <meta name="theme-color" content="#0a101b">
+  <meta name="description" content="Space Control – Partie erstellen und Spieler einladen">
+  <title>Space Control – Hybrid-Demonstrator</title>
+  <link rel="stylesheet" href="./styles.css">
+  <script src="./config.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js" defer></script>
+  <script type="module" src="./app.js"></script>
 </head>
 <body>
-  <main>
-    <div class="mark">MMD GAMES · HYBRID PLAY</div>
-    <h1>SPACE CONTROL</h1>
-    <p>Willkommen an Bord! Gib deinen Nickname ein. Das Backend prüft deine Eingabe und bestätigt die Anmeldung.</p>
-    <form id="registration-form">
-      <label for="nickname">Dein Nickname</label>
-      <input id="nickname" name="nickname" type="text" minlength="2" maxlength="20"
-        autocomplete="nickname" placeholder="z. B. Captain Nova" required>
-      <div class="hint">2–20 Zeichen · Buchstaben, Zahlen, Leerzeichen, - und _</div>
-      <button id="submit-button" type="submit">Spieler anmelden</button>
-    </form>
-    <div id="result" class="result" role="status" aria-live="polite"></div>
-    <footer>Technischer Prototyp · Keine Benutzerkonten · Keine Speicherung von Spielerdaten</footer>
+  <main class="shell">
+    <header class="top"><div class="brand">MMD GAMES · HYBRID PLAY</div><div class="connection" id="connection">Verbindung wird aufgebaut …</div></header>
+    <section class="hero"><span class="tag">Browser-Demonstrator</span><h1>SPACE CONTROL</h1><p>Eine Partie am Laptop vorbereiten, den gemeinsamen QR-Code teilen und Beitritte einzeln freigeben. Die Spieler nutzen dafür einfach den Browser auf ihrem Smartphone.</p></section>
+    <section id="join-panel" class="panel hidden">
+      <span class="tag">Spielerbeitritt</span><h2 style="margin-top:12px">Du wurdest eingeladen</h2>
+      <p class="muted">Wähle deinen Nickname. Deine Anfrage wird an die Spielleitung gesendet. Du bist erst nach der Freigabe Teil der Partie.</p>
+      <form id="join-form"><label class="field" for="nickname">Dein Nickname</label><input id="nickname" name="nickname" minlength="2" maxlength="20" autocomplete="nickname" placeholder="z. B. Captain Nova" required><button class="wide" id="join-submit" type="submit">Beitrittsanfrage senden</button></form>
+      <div id="join-notice" class="notice" role="status" aria-live="polite"></div>
+    </section>
+    <section id="admin-create" class="panel">
+      <span class="tag">Spielleitung · Laptop</span><h2 style="margin-top:12px">Neue Partie erstellen</h2>
+      <p class="muted">Du erhältst die Adminberechtigung. Dein eigener Spielerplatz entsteht erst, wenn du später denselben QR-Code wie die anderen Spieler scannst.</p>
+      <form id="create-form">
+        <label class="field" for="session-name">Name der Partie</label><input id="session-name" name="session-name" maxlength="60" value="Space Control – Demonstrator" required>
+        <div class="row"><div><label class="field" for="max-members">Spielerplätze</label><select id="max-members" name="max-members"><option value="3" selected>3 Spieler</option><option value="2">2 Spieler</option></select></div><div><label class="field" for="game-id">Spiel</label><input id="game-id" value="space-control" disabled></div></div>
+        <button class="wide" id="create-submit" type="submit">Partie erstellen</button>
+      </form>
+      <div id="create-notice" class="notice" role="status" aria-live="polite"></div>
+    </section>
+    <section id="admin-panel" class="grid hidden" style="margin-top:18px">
+      <div class="panel">
+        <div class="section-head"><span class="tag">Einladung</span><span id="session-state" class="connection"></span></div>
+        <h2 style="margin-top:12px">Gemeinsamer QR-Code</h2><p class="muted">Diesen QR-Code scannen alle Spieler – auch du selbst mit deinem Smartphone. Ein neuer Code ersetzt den vorherigen.</p>
+        <button id="invite-button" class="wide">QR-Code erzeugen / erneuern</button>
+        <div id="invite-result" class="hidden"><div class="qr-layout"><div id="qr-code" class="qr-frame" aria-label="Einladungs-QR-Code"></div><div><strong>Einladungslink</strong><p class="muted">Gültig bis <span id="invite-expiry">–</span></p><div id="invite-url" class="url"></div><button id="copy-link" class="secondary wide">Link kopieren</button></div></div></div>
+        <div id="invite-notice" class="notice" role="status" aria-live="polite"></div>
+      </div>
+      <div class="panel">
+        <div class="section-head"><span class="tag">Spielerverwaltung</span><button id="refresh-requests" class="secondary">Aktualisieren</button></div>
+        <h2 style="margin-top:12px">Beitrittsanfragen</h2><p class="muted">Offene Anfragen werden hier angezeigt. Erst deine Freigabe legt Spieler und Konto mit 1.000 Credits an.</p>
+        <div id="request-list" class="request-list"><div class="empty">Noch keine Anfragen geladen.</div></div>
+        <div id="request-notice" class="notice" role="status" aria-live="polite"></div>
+      </div>
+    </section>
+    <section id="resume-panel" class="panel hidden" style="margin-top:18px"><div class="section-head"><div><span class="tag">Gespeicherte Partie</span><h2 style="margin-top:12px">Spielleitung fortsetzen</h2></div><button id="new-session" class="secondary">Neue Partie</button></div><p class="muted">In diesem Browser ist bereits eine Partie hinterlegt. Du kannst die Spielleitung fortsetzen oder eine neue Partie anlegen.</p><button id="resume-session" class="wide">Gespeicherte Partie öffnen</button></section>
+    <footer class="foot">Technischer Demonstrator · Anonyme Supabase-Identität pro Browser · Adminrechte werden serverseitig geprüft · Noch kein Live-Test gegen eine eingerichtete Supabase-Datenbank.</footer>
   </main>
-  <script src="./config.js"></script>
-  <script>
-    const form = document.getElementById("registration-form");
-    const input = document.getElementById("nickname");
-    const button = document.getElementById("submit-button");
-    const result = document.getElementById("result");
-    function showResult(kind, message, detail = "") {
-      result.className = "result " + kind;
-      result.textContent = message + (detail ? " " + detail : "");
-    }
-    form.addEventListener("submit", async (event) => {
-      event.preventDefault();
-      result.className = "result";
-      result.textContent = "";
-      const nickname = input.value.trim();
-      if (nickname.length < 2 || nickname.length > 20) {
-        showResult("error", "Bitte gib einen Nickname mit 2 bis 20 Zeichen ein.");
-        return;
-      }
-      const config = window.SPACE_CONTROL_CONFIG;
-      if (!config?.supabaseUrl || !config?.supabaseAnonKey) {
-        showResult("error", "Die Backend-Verbindung ist noch nicht konfiguriert.");
-        return;
-      }
-      button.disabled = true;
-      button.textContent = "Anmeldung wird geprüft …";
-      try {
-        const response = await fetch(config.supabaseUrl.replace(/\/$/, "") + "/functions/v1/player-registration", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            "apikey": config.supabaseAnonKey,
-            "Authorization": "Bearer " + config.supabaseAnonKey
-          },
-          body: JSON.stringify({ nickname })
-        });
-        const data = await response.json().catch(() => ({}));
-        if (!response.ok || !data.success) {
-          showResult("error", data.message || "Die Anmeldung konnte nicht bestätigt werden.");
-          return;
-        }
-        showResult("success", data.message, "Backend-Bestätigung erhalten. Es wurden keine Spielerdaten gespeichert.");
-      } catch {
-        showResult("error", "Das Backend ist momentan nicht erreichbar.", "Bitte prüfe die Verbindung und versuche es erneut.");
-      } finally {
-        button.disabled = false;
-        button.textContent = "Spieler anmelden";
-      }
-    });
-  </script>
 </body>
 </html>
