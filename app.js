@@ -17,6 +17,7 @@ function readInviteToken() {
 let currentToken = readInviteToken();
 let currentUser = null;
 let playerPollHandle = null;
+let playerStatusCheckInFlight = false;
 let adminPollHandle = null;
 
 function notice(id, kind, message) {
@@ -70,12 +71,13 @@ function showAdmin(sessionIdValue) {
   adminPollHandle = setInterval(() => { if (!document.hidden) loadRequests(); }, 5000);
 }
 async function checkPlayerStatus() {
-  if (!currentUser) return;
+  if (!currentUser || playerStatusCheckInFlight) return;
   const savedSession = localStorage.getItem("spaceControl.playerSessionId") || "";
+  if (!savedSession) return;
+  playerStatusCheckInFlight = true;
   try {
     // Never infer a player's game from an unrelated old request.
     // The active session is set only after this browser submits this invite.
-    if (!savedSession) return;
     const query = supabase.from("join_requests")
       .select("session_id,nickname,status,requested_at")
       .eq("user_id", currentUser.id)
@@ -133,13 +135,31 @@ async function checkPlayerStatus() {
     }
   } catch (error) {
     notice("player-notice", "error", "Spielerstatus konnte nicht aktualisiert werden: " + error.message);
+  } finally {
+    playerStatusCheckInFlight = false;
   }
 }
 function startPlayerPolling() {
   if (playerPollHandle) clearInterval(playerPollHandle);
   checkPlayerStatus();
-  playerPollHandle = setInterval(() => { if (!document.hidden) checkPlayerStatus(); }, 5000);
+  // Check frequently while waiting for the game master; refresh immediately
+  // when the browser becomes active or reconnects after a network interruption.
+  playerPollHandle = setInterval(() => {
+    if (!document.hidden && navigator.onLine) checkPlayerStatus();
+  }, 2500);
 }
+document.addEventListener("visibilitychange", () => {
+  if (!document.hidden && playerPollHandle) checkPlayerStatus();
+});
+window.addEventListener("focus", () => {
+  if (playerPollHandle) checkPlayerStatus();
+});
+window.addEventListener("pageshow", () => {
+  if (playerPollHandle) checkPlayerStatus();
+});
+window.addEventListener("online", () => {
+  if (playerPollHandle) checkPlayerStatus();
+});
 async function createInvite() {
   clearNotice("invite-notice");
   $("invite-result").classList.add("hidden");
