@@ -9,6 +9,9 @@ const supabase = createClient(config.supabaseUrl, config.supabaseAnonKey, {
 let sessionId = localStorage.getItem("spaceControl.adminSessionId") || "";
 let inviteUrl = "";
 let currentToken = new URLSearchParams(location.search).get("join") || "";
+let currentUser = null;
+let playerPollHandle = null;
+let adminPollHandle = null;
 
 function notice(id, kind, message) {
   const el = $(id);
@@ -32,6 +35,7 @@ async function ensureIdentity() {
     if (result.error) throw result.error;
     session = result.data.session;
   }
+  currentUser = session.user;
   $("connection").textContent = "Browser sicher angemeldet";
   return session;
 }
@@ -56,6 +60,62 @@ function showAdmin(sessionIdValue) {
   $("admin-panel").classList.remove("hidden");
   $("session-state").textContent = "Partie " + sessionId.slice(0, 8);
   loadRequests();
+  if (adminPollHandle) clearInterval(adminPollHandle);
+  adminPollHandle = setInterval(() => { if (!document.hidden) loadRequests(); }, 5000);
+}
+async function checkPlayerStatus() {
+  if (!currentUser) return;
+  const savedSession = localStorage.getItem("spaceControl.playerSessionId") || "";
+  try {
+    let query = supabase.from("join_requests")
+      .select("session_id,nickname,status,requested_at")
+      .eq("user_id", currentUser.id)
+      .order("requested_at", { ascending: false })
+      .limit(1);
+    if (savedSession) query = query.eq("session_id", savedSession);
+    const { data, error } = await query;
+    if (error) throw error;
+    const request = data?.[0];
+    if (!request) return;
+    localStorage.setItem("spaceControl.playerSessionId", request.session_id);
+    localStorage.setItem("spaceControl.playerNickname", request.nickname);
+    if (request.status === "approved") {
+      $("join-panel").classList.add("hidden");
+      $("admin-create").classList.add("hidden");
+      $("resume-panel").classList.add("hidden");
+      $("admin-panel").classList.add("hidden");
+      $("player-panel").classList.remove("hidden");
+      $("player-name").textContent = request.nickname;
+      $("player-state").textContent = "Du bist für diese Partie freigegeben.";
+      const { data: member, error: memberError } = await supabase
+        .from("session_members").select("id").eq("session_id", request.session_id)
+        .eq("user_id", currentUser.id).eq("status", "active").maybeSingle();
+      if (memberError) throw memberError;
+      if (member) {
+        const { data: account, error: accountError } = await supabase
+          .from("accounts").select("balance").eq("session_id", request.session_id)
+          .eq("member_id", member.id).maybeSingle();
+        if (accountError) throw accountError;
+        if (account) $("player-balance").textContent = Number(account.balance).toLocaleString("de-DE") + " Credits";
+      }
+      notice("player-notice", "ok", "Teilnahme bestätigt. Du kannst diese Seite jederzeit erneut öffnen.");
+      if (playerPollHandle) { clearInterval(playerPollHandle); playerPollHandle = null; }
+    } else if (request.status === "pending") {
+      $("join-panel").classList.remove("hidden");
+      $("join-form").classList.add("hidden");
+      $("admin-create").classList.add("hidden");
+      notice("join-notice", "info", "Deine Beitrittsanfrage ist eingegangen. Warte auf die Freigabe durch die Spielleitung.");
+    } else if (request.status === "rejected" || request.status === "expired") {
+      notice("join-notice", "error", "Deine Beitrittsanfrage wurde " + (request.status === "rejected" ? "abgelehnt." : "ist abgelaufen.") + " Bitte scanne einen aktuellen Einladungscode.");
+    }
+  } catch (error) {
+    notice("player-notice", "error", "Spielerstatus konnte nicht aktualisiert werden: " + error.message);
+  }
+}
+function startPlayerPolling() {
+  if (playerPollHandle) clearInterval(playerPollHandle);
+  checkPlayerStatus();
+  playerPollHandle = setInterval(() => { if (!document.hidden) checkPlayerStatus(); }, 5000);
 }
 async function createInvite() {
   clearNotice("invite-notice");
@@ -174,6 +234,7 @@ $("copy-link").addEventListener("click", async () => {
 });
 
 $("refresh-requests").addEventListener("click", loadRequests);
+$("player-refresh").addEventListener("click", checkPlayerStatus);
 $("resume-session").addEventListener("click", () => showAdmin(sessionId));
 $("new-session").addEventListener("click", () => {
   localStorage.removeItem("spaceControl.adminSessionId");
@@ -198,7 +259,9 @@ $("join-form").addEventListener("submit", async (event) => {
       ? "Deine Beitrittsanfrage ist bereits offen. Die Spielleitung muss sie noch freigeben."
       : "Deine Beitrittsanfrage wurde gesendet. Du bist nach der Freigabe durch die Spielleitung dabei.");
     localStorage.setItem("spaceControl.pendingJoinToken", currentToken);
+    localStorage.setItem("spaceControl.playerNickname", $("nickname").value.trim());
     $("join-form").classList.add("hidden");
+    startPlayerPolling();
   } catch (error) {
     notice("join-notice", "error", error.message);
   } finally {
@@ -209,16 +272,25 @@ $("join-form").addEventListener("submit", async (event) => {
 async function boot() {
   try {
     await ensureIdentity();
+    const savedPlayerSession = localStorage.getItem("spaceControl.playerSessionId");
     if (currentToken) {
       $("join-panel").classList.remove("hidden");
       $("admin-create").classList.add("hidden");
-      const pendingToken = localStorage.getItem("spaceControl.pendingJoinToken");
-      if (pendingToken === currentToken) {
-        $("join-form").classList.add("hidden");
-        notice("join-notice", "info", "Deine Beitrittsanfrage wurde bereits gesendet. Bitte warte auf die Freigabe durch die Spielleitung.");
-      }
       $("resume-panel").classList.add("hidden");
       $("admin-panel").classList.add("hidden");
+      const pendingToken = localStorage.getItem("spaceControl.pendingJoinToken");
+      if (pendingToken === currentToken) $("join-form").classList.add("hidden");
+      startPlayerPolling();
+      return;
+    }
+    if (savedPlayerSession) {
+      $("player-panel").classList.remove("hidden");
+      $("admin-create").classList.add("hidden");
+      $("resume-panel").classList.add("hidden");
+      $("admin-panel").classList.add("hidden");
+      $("player-name").textContent = localStorage.getItem("spaceControl.playerNickname") || "Spieler";
+      $("player-state").textContent = "Gespeicherte Teilnahme wird wiederhergestellt …";
+      startPlayerPolling();
       return;
     }
     if (sessionId) $("resume-panel").classList.remove("hidden");
