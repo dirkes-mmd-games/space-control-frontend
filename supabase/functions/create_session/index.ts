@@ -1,6 +1,6 @@
 // Supabase Edge Function: create_session
-// Creates the session, creator membership, admin permission and opening account
-// through one transactional PostgreSQL RPC. No service-role key is exposed.
+// Creates a game session and grants its creator session-scoped admin rights.
+// The creator is NOT enrolled as a player; all players join via the shared invite.
 
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
@@ -39,7 +39,7 @@ Deno.serve(async (req: Request) => {
     return respond(400, { error: "Request body must be valid JSON" });
   }
 
-  const allowed = ["game_id", "display_name", "nickname", "max_members", "initial_balance", "currency"];
+  const allowed = ["game_id", "display_name", "max_members"];
   if (Object.keys(payload).some((key) => !allowed.includes(key))) {
     return respond(400, { error: "Request contains unsupported fields" });
   }
@@ -55,10 +55,7 @@ Deno.serve(async (req: Request) => {
   const { data, error } = await supabase.rpc("create_session", {
     p_game_id: payload.game_id,
     p_display_name: payload.display_name,
-    p_nickname: payload.nickname,
     p_max_members: payload.max_members ?? 3,
-    p_initial_balance: payload.initial_balance ?? 1000,
-    p_currency: payload.currency ?? "CREDITS",
   });
 
   if (error) {
