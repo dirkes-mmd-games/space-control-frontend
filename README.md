@@ -32,6 +32,9 @@ Die Oberfläche ruft folgende Edge Functions auf:
 - `request_session_join`
 - `approve_join_request`
 - `reject_join_request`
+- `get_session_invite_info`
+
+Zusätzlich verwendet die Anwendung die RPC-Funktionen `start_session` und `leave_own_session`. Die Startfunktion verlangt mindestens zwei aktive Spieler. Die Spielleitung ist keine automatische Spielteilnahme.
 
 Die Liste offener Anfragen wird über die Tabelle `join_requests` gelesen. Die vorhandene RLS-Policy erlaubt diese Abfrage nur dem Partie-Admin beziehungsweise dem jeweiligen Antragsteller; die Adminberechtigung wird nicht aus der Browseroberfläche abgeleitet.
 
@@ -48,6 +51,6 @@ Ein QR-Code enthält einen Link auf diese Website mit dem Einladungstoken als Qu
 
 ## Technischer Status und Grenzen
 
-Der Browser-Client ist in GitHub gespeichert. Die Anwendung wurde hier nicht gegen ein laufendes Supabase-Projekt ausgeführt. Vor einem realen Spieletest müssen die Datenbankmigrationen in der vorgesehenen Reihenfolge ausgeführt, die Edge Functions deployed und die Supabase-Einstellung für anonyme Anmeldungen aktiviert werden.
+Der Browser-Client ist in GitHub gespeichert. Der aktuelle Frontend-Stand ist mit dem aktiven Supabase-Projekt `mbztajfcqunkbuismkkt` verbunden. Die sieben deployten Edge Functions und die Datenbank-RPCs sind im Hauptrepository dokumentiert. Die Browseroberfläche wurde statisch und mit simulierten Browser-/Backend-Antworten geprüft; ein vollständiger Live-Test mit zwei getrennten Geräten steht noch aus.
 
 Die QR-Code-Erzeugung verwendet QRCode.js über cdnjs. Für einen produktiven Einsatz sollten zusätzlich restriktive CORS-Regeln, Rate-Limits und ein Wiederherstellungsweg für anonyme Identitäten geprüft werden.
