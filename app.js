@@ -435,7 +435,7 @@ async function checkPlayerStatus() {
           : "Du bist freigegeben. Die Spielleitung startet die Partie, sobald sie bereit ist.");
         await loadPlayerCockpit(request.session_id, member.id, sessionInfo);
       }
-            notice("player-notice", "ok", "Teilnahme bestätigt. Du kannst diese Seite jederzeit erneut öffnen.");      notice("player-notice", "ok", "Teilnahme bestätigt. Du kannst diese Seite jederzeit erneut öffnen.");
+      notice("player-notice", "ok", "Teilnahme bestätigt. Du kannst diese Seite jederzeit erneut öffnen.");
     } else if (request.status === "pending") {
       $("join-panel").classList.remove("hidden");
       $("join-form").classList.add("hidden");
