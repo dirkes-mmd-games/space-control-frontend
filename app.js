@@ -325,6 +325,30 @@ async function loadAdminMonitor() {
       item.append(details);
       transferList.append(item);
     }
+    const transactionList = $("admin-transaction-list");
+    if (transactionList) {
+      transactionList.replaceChildren();
+      const transactions = transfers.data?.transactions || [];
+      if (!transactions.length) {
+        const empty = document.createElement("div");
+        empty.className = "empty";
+        empty.textContent = "Noch keine Buchungen vorhanden.";
+        transactionList.append(empty);
+      }
+      for (const transaction of transactions) {
+        const item = document.createElement("div");
+        item.className = "request";
+        const details = document.createElement("div");
+        const title = document.createElement("strong");
+        const amount = Number(transaction.amount || 0);
+        title.textContent = transaction.player_name + " · " + (amount >= 0 ? "+" : "−") + formatCredits(Math.abs(amount));
+        const meta = document.createElement("small");
+        meta.textContent = (transaction.description || transaction.transaction_type) + " · " + formatDateTime(transaction.created_at);
+        details.append(title, meta);
+        item.append(details);
+        transactionList.append(item);
+      }
+    }
     const missionList = $("admin-mission-list");
     missionList.replaceChildren();
     for (const mission of (missions.data?.missions || [])) {
