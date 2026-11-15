@@ -97,7 +97,7 @@ function setPlayerView(view) {
 function renderPlayerClock() {
   const target = $("player-session-time");
   if (!target || !playerSessionInfo?.started_at) {
-    if (target) target.textContent = "Noch nicht gestartet";
+    if (target) target.textContent = playerSessionInfo?.status === "active" ? "Zeit nicht erfasst" : "Noch nicht gestartet";
     return;
   }
   const seconds = Math.max(0, Math.floor((Date.now() - new Date(playerSessionInfo.started_at).getTime()) / 1000));
