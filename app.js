@@ -235,7 +235,7 @@ async function loadRequests() {
   await loadRoster();
 }
 async function loadRoster() {
-  if (!sessionId) return;
+  if (!sessionId || !$("roster-count") || !$("roster-list") || !$("start-session") || !$("start-info")) return;
   try {
     const [{ data: members, error: memberError }, { data: accounts, error: accountError }, { data: session, error: sessionError }] = await Promise.all([
       supabaseClient.from("session_members").select("id,nickname,status,joined_at").eq("session_id", sessionId).order("joined_at", { ascending: true }),
