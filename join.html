@@ -6,7 +6,7 @@
   <meta name="theme-color" content="#0a101b">
   <meta name="description" content="Space Control – Partie erstellen und Spieler einladen">
   <title>Space Control – Spielerbeitritt</title>
-  <link rel="stylesheet" href="./styles.css?v=20261114-join4">
+  <link rel="stylesheet" href="./styles.css?v=20261115-2">
   <script src="./config.js"></script>
   <script>
     window.addEventListener("error", function (event) {
@@ -24,7 +24,7 @@
   </script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js" defer></script>
-  <script src="./app.js?v=20261115-1" defer></script>
+  <script src="./app.js?v=20261115-2" defer></script>
 </head>
 <body class="join-mode">
   <main class="shell">
@@ -39,15 +39,65 @@
       <form id="join-form"><label class="field" for="nickname">Dein Nickname</label><input id="nickname" name="nickname" minlength="2" maxlength="20" autocomplete="nickname" placeholder="z. B. Captain Nova" required><button class="wide" id="join-submit" type="submit">Beitrittsanfrage senden</button></form>
       <div id="join-notice" class="notice" role="status" aria-live="polite"></div>
     </section>
-    <section id="player-panel" class="panel hidden">
-      <span class="tag">Spielerbereich</span>
-      <h2 style="margin-top:12px">Willkommen, <span id="player-name">Spieler</span></h2>
-      <p class="muted" id="player-state">Deine Teilnahme wird geprüft …</p>
-      <div class="status-line">Aktuelle Partie: <strong id="player-session-name">–</strong></div>
-      <div class="status-line">Partienummer: <strong id="player-session-id">–</strong></div>
-      <div class="status-line">Dein Kontostand: <strong id="player-balance">1.000 Credits</strong></div>
-      <button id="player-refresh" class="secondary wide">Status aktualisieren</button>
-      <button id="player-leave" class="danger wide">Partie verlassen</button>
+    <section id="player-panel" class="panel hidden player-shell">
+      <div class="player-topline"><span class="tag">Spieler-Cockpit</span><span id="player-state" class="connection">Deine Teilnahme wird geprüft …</span></div>
+      <h2 class="player-title">Willkommen, <span id="player-name">Spieler</span></h2>
+      <div class="player-session-card">
+        <span class="muted">Aktuelle Partie</span>
+        <h2 id="player-session-name">–</h2>
+        <div class="player-session-meta"><span id="player-session-status">Wird geladen …</span><span id="player-session-id" class="session-id-muted">Partie · –</span></div>
+      </div>
+      <nav id="player-nav" class="player-nav hidden" aria-label="Spieleransichten">
+        <button type="button" class="player-nav-button active" data-player-view="overview"><span>◫</span>Übersicht</button>
+        <button type="button" class="player-nav-button" data-player-view="account"><span>◉</span>Konto</button>
+        <button type="button" class="player-nav-button" data-player-view="missions"><span>▣</span>Geheime Aufträge</button>
+      </nav>
+      <section id="player-view-overview" class="player-view">
+        <div class="player-stat-grid">
+          <div class="player-stat"><span>Aktuelle Spielzeit</span><strong id="player-session-time">–</strong></div>
+          <div class="player-stat"><span>Mitspieler</span><strong id="player-player-count">–</strong></div>
+        </div>
+        <h3>Mitspieler</h3>
+        <div id="player-roster-list" class="player-roster-list"><div class="empty">Spielerliste wird geladen …</div></div>
+        <details class="rules-details">
+          <summary>Spielregeln &amp; kurze Spielinformationen</summary>
+          <div id="player-rules-text" class="muted"><strong>Kurzinfo – vorläufiger Regelstand</strong><p>Space Control ist ein strategisches Weltraum-Brettspiel. Die Spielenden entwickeln Flotten, nutzen Aktionen und Ressourcen und bewegen Raumschiffe auf drei drehbaren Planetenringen. Planeten können erreicht und kontrolliert werden; das Spiel verbindet räumliche Planung, Ressourcenmanagement und taktische Interaktion.</p><p>Die vollständigen Siegbedingungen und einzelne Ablaufdetails befinden sich noch in der Rekonstruktion. Diese Kurzinfo ist daher keine vollständige Spielregel.</p></div>
+        </details>
+        <button id="player-refresh" class="secondary wide">Aktualisieren</button>
+      </section>
+      <section id="player-view-account" class="player-view hidden">
+        <div class="balance-card"><span>Dein Kontostand</span><strong id="player-account-balance">1.000 Credits</strong><small id="player-transfer-available">Verfügbar für Überweisungen: 1.000 Credits</small></div>
+        <h3>Überweisung senden</h3>
+        <form id="transfer-form" class="transfer-form">
+          <label class="field" for="transfer-recipient">Empfänger</label>
+          <select id="transfer-recipient" required><option value="">Mitspieler auswählen</option></select>
+          <div class="row">
+            <div><label class="field" for="transfer-amount">Betrag (50er-Schritte)</label><input id="transfer-amount" type="number" min="50" step="50" inputmode="numeric" placeholder="z. B. 250" required></div>
+          </div>
+          <label class="field" for="transfer-subject">Betreff (optional)</label>
+          <input id="transfer-subject" type="text" maxlength="120" placeholder="Wofür ist die Überweisung?">
+          <button id="transfer-submit" class="wide" type="submit">Überweisung anfragen</button>
+        </form>
+        <div id="transfer-notice" class="notice" role="status" aria-live="polite"></div>
+        <h3>Überweisungen</h3>
+        <div id="player-transfer-requests" class="request-list"><div class="empty">Keine Überweisungen vorhanden.</div></div>
+        <h3>Transaktionshistorie</h3>
+        <div id="player-transaction-history" class="request-list"><div class="empty">Noch keine Buchungen vorhanden.</div></div>
+      </section>
+      <section id="player-view-missions" class="player-view hidden">
+        <div id="player-mission-empty" class="mission-empty">
+          <div class="mission-lock">▣</div><h3>Dein geheimer Auftrag</h3>
+          <p class="muted">Ziehe einen geheimen Auftrag. Er wird dir endgültig zugewiesen und kann von keinem anderen Spieler mehr gezogen werden.</p>
+          <button id="draw-mission" class="wide">Geheimen Auftrag ziehen</button>
+        </div>
+        <div id="player-mission-card" class="mission-card hidden">
+          <span class="tag">Dein geheimer Auftrag</span>
+          <h2 id="player-mission-title">–</h2>
+          <p id="player-mission-description" class="muted">–</p>
+          <small id="player-mission-assigned" class="muted"></small>
+        </div>
+        <div id="mission-notice" class="notice" role="status" aria-live="polite"></div>
+      </section>
       <div id="player-notice" class="notice" role="status" aria-live="polite"></div>
     </section>
     <section id="admin-create" class="panel">
@@ -76,7 +126,7 @@
       </div>
     </section>
     <section id="resume-panel" class="panel hidden" style="margin-top:18px"><div class="section-head"><div><span class="tag">Gespeicherte Partie</span><h2 style="margin-top:12px">Spielleitung fortsetzen</h2></div><button id="new-session" class="secondary">Neue Partie</button></div><p class="muted">In diesem Browser ist bereits eine Partie hinterlegt. Du kannst die Spielleitung fortsetzen oder eine neue Partie anlegen.</p><button id="resume-session" class="wide">Gespeicherte Partie öffnen</button></section>
-    <footer class="foot">Technischer Demonstrator · Anonyme Supabase-Identität pro Browser · Adminrechte werden serverseitig geprüft · Noch kein Live-Test gegen eine eingerichtete Supabase-Datenbank.</footer>
+    <footer class="foot">Technischer Demonstrator · Anonyme Supabase-Identität pro Browser · Adminrechte werden serverseitig geprüft · Player-Cockpit V1.0 in Testvorbereitung.</footer>
   </main>
 </body>
 </html>

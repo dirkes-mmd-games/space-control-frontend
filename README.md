@@ -11,6 +11,12 @@ Mobile Weboberfläche und Spielleiteransicht für den Hybrid-Demonstrator. Die A
 - Anzeige offener Beitrittsanfragen in der Spielleiteransicht.
 - Freigabe oder Ablehnung einer Anfrage.
 - Bei Freigabe werden Spieler und Konto mit 1.000 Credits serverseitig atomar angelegt.
+- Nach dem Partie-Start wechselt die Spieleroberfläche in ein Cockpit mit drei Ansichten: Partie-Übersicht, Konto und geheime Aufträge.
+- Die Übersicht zeigt Partiename, Mitspieler, Spielstatus, Startzeit und laufende Spielzeit. Die technische Partienummer wird nur verkürzt angezeigt.
+- Im Konto können Spieler Überweisungsanfragen in 50-Credit-Schritten stellen. Der Empfänger bestätigt oder lehnt ab; erst nach Bestätigung werden die Konten atomar gebucht.
+- Spieler sehen ihre eigenen Transaktionen und beteiligten Überweisungen. Die Spielleitung erhält einen Partie-Monitor mit vollständiger Transaktionshistorie.
+- Pro Partie gibt es zehn geheime Beispielaufträge. Die Ziehung erfolgt zufällig ohne Zurücklegen; jeder Spieler erhält höchstens einen Auftrag. Der Auftrag kann nicht gewechselt werden.
+- Die Spielleitung kann alle zehn Aufträge und deren Vergabestatus einsehen.
 
 ## Dateien
 
@@ -34,7 +40,17 @@ Die Oberfläche ruft folgende Edge Functions auf:
 - `reject_join_request`
 - `get_session_invite_info`
 
-Zusätzlich verwendet die Anwendung die RPC-Funktionen `start_session` und `leave_own_session`. Die Startfunktion verlangt mindestens zwei aktive Spieler. Die Spielleitung ist keine automatische Spielteilnahme.
+Zusätzlich verwendet die Anwendung folgende Datenbank-RPCs:
+- `start_session`
+- `get_player_account_dashboard`
+- `create_transfer_request`
+- `decide_transfer_request`
+- `draw_secret_mission`
+- `get_my_secret_mission`
+- `admin_get_transfer_dashboard`
+- `admin_get_secret_mission_pool`
+
+Die Startfunktion verlangt mindestens zwei aktive Spieler und setzt `started_at`. Die Spielleitung ist keine automatische Spielteilnahme. Austritt und Pause sind im Player-Cockpit V1.0 bewusst noch nicht enthalten.
 
 Die Liste offener Anfragen wird über die Tabelle `join_requests` gelesen. Die vorhandene RLS-Policy erlaubt diese Abfrage nur dem Partie-Admin beziehungsweise dem jeweiligen Antragsteller; die Adminberechtigung wird nicht aus der Browseroberfläche abgeleitet.
 
@@ -51,6 +67,6 @@ Ein QR-Code enthält einen Link auf diese Website mit dem Einladungstoken als Qu
 
 ## Technischer Status und Grenzen
 
-Der Browser-Client ist in GitHub gespeichert. Der aktuelle Frontend-Stand ist mit dem aktiven Supabase-Projekt `mbztajfcqunkbuismkkt` verbunden. Die sieben deployten Edge Functions und die Datenbank-RPCs sind im Hauptrepository dokumentiert. Die Browseroberfläche wurde statisch und mit simulierten Browser-/Backend-Antworten geprüft; ein vollständiger Live-Test mit zwei getrennten Geräten steht noch aus.
+Der bisherige Einladungs- und Beitrittsablauf wurde vom Projektverantwortlichen erfolgreich mit iPhone und Android getestet. Die neue Player-Cockpit-Oberfläche liegt auf dem Feature-Branch `feature/player-cockpit-v1` und ist noch nicht auf GitHub Pages veröffentlicht. Das neue Backend ist bereits im Live-Supabase-Projekt `mbztajfcqunkbuismkkt` migriert und wurde mit synthetischen, vollständig zurückgerollten Datenbanktests geprüft. Der End-to-End-Test der neuen Konto- und Auftragsfunktionen auf realen Geräten steht noch aus.
 
 Die QR-Code-Erzeugung verwendet QRCode.js über cdnjs. Für einen produktiven Einsatz sollten zusätzlich restriktive CORS-Regeln, Rate-Limits und ein Wiederherstellungsweg für anonyme Identitäten geprüft werden.
