@@ -8,3 +8,38 @@ body.join-mode #resume-panel { display: none !important; }
 .start-box{border:1px solid #355174;border-radius:14px;padding:14px;background:rgba(35,57,82,.35)}
 .start-box>strong{display:block;font-size:15px}
 .start-box .muted{font-size:13px;line-height:1.5}
+
+/* Player cockpit */
+.player-shell{padding:20px;max-width:760px;margin:0 auto}
+.player-topline,.player-session-meta{display:flex;align-items:center;justify-content:space-between;gap:12px}
+.player-title{margin:14px 0!important}
+.player-session-card{padding:18px;border:1px solid #3b5879;border-radius:16px;background:linear-gradient(135deg,#1b3451,#122237);margin:16px 0}
+.player-session-card h2{font-size:clamp(21px,5vw,30px);margin:5px 0 10px!important}
+.player-session-meta{font-size:12px;color:#b7c7da}
+.session-id-muted{opacity:.55;font-size:11px;overflow-wrap:anywhere}
+.player-nav{display:grid;grid-template-columns:repeat(3,1fr);gap:7px;margin:18px 0 22px;padding:6px;border:1px solid #344b66;border-radius:15px;background:#0d1928;position:sticky;top:8px;z-index:2}
+.player-nav-button{background:transparent;color:#aebed2;border:1px solid transparent;padding:11px 6px;font-size:12px;display:flex;flex-direction:column;gap:5px;align-items:center}
+.player-nav-button span{font-size:19px}
+.player-nav-button.active{background:#243d5d;color:#fff;border-color:#45688f}
+.player-view h3,.admin-monitor h3{font-size:16px;margin:22px 0 10px}
+.player-stat-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:14px 0 22px}
+.player-stat,.balance-card{border:1px solid #344b66;border-radius:14px;padding:15px;background:#101c2b}
+.player-stat span,.balance-card span{display:block;color:#aebed2;font-size:12px}
+.player-stat strong{display:block;font-size:22px;margin-top:6px;font-variant-numeric:tabular-nums}
+.player-roster-list{display:grid;gap:8px}
+.player-roster-item{display:flex;align-items:center;justify-content:space-between;padding:12px 14px;background:#101c2b;border:1px solid #344b66;border-radius:12px}
+.player-roster-item small{color:#aebed2}
+.rules-details{margin-top:18px;padding:14px;border:1px solid #344b66;border-radius:13px;background:#101c2b}
+.rules-details summary{cursor:pointer;font-weight:700;font-size:14px}
+.rules-details .muted{margin-top:12px}
+.balance-card strong{display:block;font-size:clamp(27px,7vw,36px);margin:8px 0;font-variant-numeric:tabular-nums}
+.balance-card small{color:#9fc4ff;font-size:12px}
+.transfer-form{padding:14px;border:1px solid #344b66;border-radius:14px;background:#101c2b}
+.transfer-form .field:first-child{margin-top:4px}
+.mission-empty,.mission-card{padding:22px;border:1px solid #3b5879;border-radius:16px;background:linear-gradient(145deg,#172b43,#101b2a);text-align:center}
+.mission-lock{font-size:32px;color:#9fc4ff}
+.mission-card{text-align:left}
+.mission-card h2{font-size:23px;margin:18px 0 10px}
+.mission-card p{font-size:15px}
+.admin-monitor{margin-top:18px}
+@media(max-width:520px){.player-shell{padding:15px}.player-nav-button{font-size:11px}.player-stat strong{font-size:19px}.player-topline{align-items:flex-start}.player-session-meta{align-items:flex-start;flex-direction:column;gap:4px}}
