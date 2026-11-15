@@ -23,8 +23,14 @@ let adminPollHandle = null;
 
 function notice(id, kind, message) {
   const el = $(id);
-  el.className = "notice show " + kind;
-  el.textContent = message;
+  const nextClass = "notice show " + kind;
+  if (el.className !== nextClass) el.className = nextClass;
+  if (el.textContent !== message) el.textContent = message;
+}
+function setTextIfChanged(id, value) {
+  const el = $(id);
+  const next = String(value);
+  if (el && el.textContent !== next) el.textContent = next;
 }
 function clearNotice(id) {
   const el = $(id);
@@ -105,8 +111,8 @@ async function checkPlayerStatus() {
       $("resume-panel").classList.add("hidden");
       $("admin-panel").classList.add("hidden");
       $("player-panel").classList.remove("hidden");
-      $("player-name").textContent = request.nickname;
-      $("player-state").textContent = "Du bist für diese Partie freigegeben.";
+      setTextIfChanged("player-name", request.nickname);
+      setTextIfChanged("player-state", "Du bist für diese Partie freigegeben.");
       const { data: member, error: memberError } = await supabaseClient
         .from("session_members").select("id").eq("session_id", request.session_id)
         .eq("user_id", currentUser.id).eq("status", "active").maybeSingle();
@@ -124,17 +130,17 @@ async function checkPlayerStatus() {
         .from("game_sessions").select("id,display_name,status").eq("id", request.session_id).maybeSingle();
       if (sessionError) throw sessionError;
       if (sessionInfo) {
-        $("player-session-name").textContent = sessionInfo.display_name;
-        $("player-session-id").textContent = sessionInfo.id;
-        $("player-state").textContent = sessionInfo.status === "active"
+        setTextIfChanged("player-session-name", sessionInfo.display_name);
+        setTextIfChanged("player-session-id", sessionInfo.id);
+        setTextIfChanged("player-state", sessionInfo.status === "active"
           ? "Die Partie wurde gestartet. Viel Erfolg!"
-          : "Du bist freigegeben. Die Spielleitung startet die Partie, sobald sie bereit ist.";
+          : "Du bist freigegeben. Die Spielleitung startet die Partie, sobald sie bereit ist.");
       }
       const { data: account, error: accountError } = await supabaseClient
         .from("accounts").select("balance").eq("session_id", request.session_id)
         .eq("member_id", member.id).maybeSingle();
       if (accountError) throw accountError;
-      if (account) $("player-balance").textContent = Number(account.balance).toLocaleString("de-DE") + " Credits";
+      if (account) setTextIfChanged("player-balance", Number(account.balance).toLocaleString("de-DE") + " Credits");
       notice("player-notice", "ok", "Teilnahme bestätigt. Du kannst diese Seite jederzeit erneut öffnen.");
     } else if (request.status === "pending") {
       $("join-panel").classList.remove("hidden");
@@ -157,7 +163,7 @@ function startPlayerPolling() {
   // when the browser becomes active or reconnects after a network interruption.
   playerPollHandle = setInterval(() => {
     if (!document.hidden && navigator.onLine) checkPlayerStatus();
-  }, 2500);
+  }, 10000);
 }
 document.addEventListener("visibilitychange", () => {
   if (!document.hidden && playerPollHandle) checkPlayerStatus();
