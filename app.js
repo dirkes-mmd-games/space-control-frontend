@@ -20,6 +20,11 @@ let currentUser = null;
 let playerPollHandle = null;
 let playerStatusCheckInFlight = false;
 let adminPollHandle = null;
+let playerClockHandle = null;
+let playerMemberId = "";
+let playerSessionInfo = null;
+let playerRosterData = [];
+let playerDashboardData = null;
 
 function notice(id, kind, message) {
   const el = $(id);
@@ -71,6 +76,276 @@ async function invoke(name, body) {
   if (data?.error) throw new Error(data.error);
   return data;
 }
+
+function formatCredits(value) {
+  return Number(value || 0).toLocaleString("de-DE") + " Credits";
+}
+function formatDateTime(value) {
+  return value ? new Date(value).toLocaleString("de-DE") : "–";
+}
+function setPlayerView(view) {
+  const allowed = ["overview", "account", "missions"];
+  if (!allowed.includes(view)) return;
+  document.querySelectorAll("[data-player-view]").forEach(button => {
+    button.classList.toggle("active", button.dataset.playerView === view);
+  });
+  allowed.forEach(name => {
+    const panel = $("player-view-" + name);
+    if (panel) panel.classList.toggle("hidden", name !== view);
+  });
+}
+function renderPlayerClock() {
+  const target = $("player-session-time");
+  if (!target || !playerSessionInfo?.started_at) {
+    if (target) target.textContent = "Noch nicht gestartet";
+    return;
+  }
+  const seconds = Math.max(0, Math.floor((Date.now() - new Date(playerSessionInfo.started_at).getTime()) / 1000));
+  const hours = String(Math.floor(seconds / 3600)).padStart(2, "0");
+  const minutes = String(Math.floor((seconds % 3600) / 60)).padStart(2, "0");
+  const remainder = String(seconds % 60).padStart(2, "0");
+  target.textContent = hours + ":" + minutes + ":" + remainder;
+}
+function renderPlayerRoster() {
+  const list = $("player-roster-list");
+  if (!list) return;
+  list.replaceChildren();
+  const active = playerRosterData.filter(member => member.status === "active");
+  $("player-player-count").textContent = String(active.length);
+  if (!active.length) {
+    const empty = document.createElement("div");
+    empty.className = "empty";
+    empty.textContent = "Noch keine Mitspieler vorhanden.";
+    list.append(empty);
+    return;
+  }
+  for (const member of active) {
+    const item = document.createElement("div");
+    item.className = "player-roster-item";
+    const name = document.createElement("strong");
+    name.textContent = member.nickname + (member.id === playerMemberId ? " · Du" : "");
+    const status = document.createElement("small");
+    status.textContent = member.id === playerMemberId ? "Dein Spielerplatz" : "Aktiver Mitspieler";
+    item.append(name, status);
+    list.append(item);
+  }
+}
+function renderTransferRequests() {
+  const list = $("player-transfer-requests");
+  if (!list) return;
+  list.replaceChildren();
+  const requests = playerDashboardData?.transfer_requests || [];
+  const available = Math.max(0, Number(playerDashboardData?.balance || 0) -
+    requests.filter(r => r.status === "pending" && r.sender_member_id === playerMemberId)
+      .reduce((sum, r) => sum + Number(r.amount || 0), 0));
+  setTextIfChanged("player-transfer-available", "Verfügbar für Überweisungen: " + formatCredits(available));
+  const amountInput = $("transfer-amount");
+  if (amountInput) amountInput.max = String(available);
+  if (!requests.length) {
+    const empty = document.createElement("div");
+    empty.className = "empty";
+    empty.textContent = "Keine Überweisungen vorhanden.";
+    list.append(empty);
+  }
+  for (const request of requests) {
+    const item = document.createElement("div");
+    item.className = "request";
+    const details = document.createElement("div");
+    const title = document.createElement("strong");
+    title.textContent = (request.is_incoming ? "Von " + request.sender_name : "An " + request.recipient_name) +
+      " · " + formatCredits(request.amount);
+    const meta = document.createElement("small");
+    meta.textContent = (request.subject || "Ohne Betreff") + " · " + formatDateTime(request.created_at);
+    const status = document.createElement("small");
+    const labels = { pending: "Wartet auf Entscheidung", confirmed: "Bestätigt", rejected: "Abgelehnt" };
+    status.textContent = labels[request.status] || request.status;
+    details.append(title, meta, status);
+    item.append(details);
+    if (request.is_incoming && request.status === "pending") {
+      const actions = document.createElement("div");
+      actions.className = "actions";
+      const accept = document.createElement("button");
+      accept.textContent = "Bestätigen";
+      accept.addEventListener("click", () => decideTransfer(request.id, true, accept));
+      const reject = document.createElement("button");
+      reject.className = "danger";
+      reject.textContent = "Ablehnen";
+      reject.addEventListener("click", () => decideTransfer(request.id, false, reject));
+      actions.append(accept, reject);
+      item.append(actions);
+    }
+    list.append(item);
+  }
+}
+function renderTransactionHistory() {
+  const list = $("player-transaction-history");
+  if (!list) return;
+  list.replaceChildren();
+  const transactions = playerDashboardData?.transactions || [];
+  if (!transactions.length) {
+    const empty = document.createElement("div");
+    empty.className = "empty";
+    empty.textContent = "Noch keine Buchungen vorhanden.";
+    list.append(empty);
+    return;
+  }
+  for (const transaction of transactions) {
+    const item = document.createElement("div");
+    item.className = "request";
+    const details = document.createElement("div");
+    const title = document.createElement("strong");
+    const amount = Number(transaction.amount || 0);
+    title.textContent = (amount >= 0 ? "+" : "−") + formatCredits(Math.abs(amount));
+    const meta = document.createElement("small");
+    const label = amount > 0 ? "Gutschrift" : amount < 0 ? "Überweisung" : transaction.transaction_type;
+    meta.textContent = label + (transaction.counterparty ? " · " + transaction.counterparty : "") +
+      " · " + formatDateTime(transaction.created_at);
+    const subject = document.createElement("small");
+    subject.textContent = transaction.description || "–";
+    details.append(title, meta, subject);
+    item.append(details);
+    list.append(item);
+  }
+}
+function renderMission(mission) {
+  const empty = $("player-mission-empty");
+  const card = $("player-mission-card");
+  if (!empty || !card) return;
+  if (!mission) {
+    empty.classList.remove("hidden");
+    card.classList.add("hidden");
+    return;
+  }
+  empty.classList.add("hidden");
+  card.classList.remove("hidden");
+  setTextIfChanged("player-mission-title", mission.title || "Geheimer Auftrag");
+  setTextIfChanged("player-mission-description", mission.description || "");
+  setTextIfChanged("player-mission-assigned", "Zugewiesen am " + formatDateTime(mission.assigned_at));
+}
+async function loadPlayerCockpit(sessionIdValue, memberId, sessionInfo) {
+  playerMemberId = memberId;
+  playerSessionInfo = sessionInfo;
+  const [rosterResult, dashboardResult, missionResult] = await Promise.all([
+    supabaseClient.from("session_members")
+      .select("id,nickname,status,joined_at")
+      .eq("session_id", sessionIdValue)
+      .order("joined_at", { ascending: true }),
+    supabaseClient.rpc("get_player_account_dashboard", { p_session_id: sessionIdValue }),
+    supabaseClient.rpc("get_my_secret_mission", { p_session_id: sessionIdValue })
+  ]);
+  if (rosterResult.error) throw rosterResult.error;
+  if (dashboardResult.error) throw dashboardResult.error;
+  if (missionResult.error) throw missionResult.error;
+  playerRosterData = rosterResult.data || [];
+  playerDashboardData = dashboardResult.data || {};
+  setTextIfChanged("player-session-name", sessionInfo.display_name || "Space Control");
+  setTextIfChanged("player-session-id", "Partie · " + String(sessionInfo.id || sessionIdValue).slice(0, 8) + "…");
+  setTextIfChanged("player-session-status", sessionInfo.status === "active" ? "Partie läuft" : "Wartet auf Spielstart");
+  setTextIfChanged("player-account-balance", formatCredits(playerDashboardData.balance));
+  renderPlayerRoster();
+  renderTransferRequests();
+  renderTransactionHistory();
+  renderMission(missionResult.data?.mission || null);
+  const nav = $("player-nav");
+  if (nav) {
+    nav.classList.toggle("hidden", sessionInfo.status !== "active");
+    if (sessionInfo.status !== "active") setPlayerView("overview");
+  }
+  if (sessionInfo.started_at) {
+    renderPlayerClock();
+    if (!playerClockHandle) playerClockHandle = setInterval(renderPlayerClock, 1000);
+  } else {
+    if (playerClockHandle) { clearInterval(playerClockHandle); playerClockHandle = null; }
+    renderPlayerClock();
+  }
+  const recipient = $("transfer-recipient");
+  if (recipient) {
+    const previous = recipient.value;
+    recipient.replaceChildren();
+    const placeholder = document.createElement("option");
+    placeholder.value = "";
+    placeholder.textContent = "Mitspieler auswählen";
+    recipient.append(placeholder);
+    for (const member of playerRosterData.filter(m => m.status === "active" && m.id !== playerMemberId)) {
+      const option = document.createElement("option");
+      option.value = member.id;
+      option.textContent = member.nickname;
+      recipient.append(option);
+    }
+    if (previous && playerRosterData.some(m => m.id === previous && m.id !== playerMemberId && m.status === "active")) {
+      recipient.value = previous;
+    }
+  }
+}
+async function decideTransfer(requestId, accept, button) {
+  setBusy(button, true, accept ? "Wird bestätigt …" : "Wird abgelehnt …");
+  clearNotice("transfer-notice");
+  try {
+    const { error } = await supabaseClient.rpc("decide_transfer_request", {
+      p_request_id: requestId,
+      p_accept: accept
+    });
+    if (error) throw error;
+    notice("transfer-notice", "ok", accept ? "Überweisung bestätigt und verbucht." : "Überweisung abgelehnt.");
+    await checkPlayerStatus();
+  } catch (error) {
+    notice("transfer-notice", "error", error.message);
+    setBusy(button, false, accept ? "Bestätigen" : "Ablehnen");
+  }
+}
+async function loadAdminMonitor() {
+  if (!sessionId || !$("admin-transfer-list") || !$("admin-mission-list")) return;
+  try {
+    const [transfers, missions] = await Promise.all([
+      supabaseClient.rpc("admin_get_transfer_dashboard", { p_session_id: sessionId }),
+      supabaseClient.rpc("admin_get_secret_mission_pool", { p_session_id: sessionId })
+    ]);
+    if (transfers.error) throw transfers.error;
+    if (missions.error) throw missions.error;
+    const transferList = $("admin-transfer-list");
+    transferList.replaceChildren();
+    const requests = transfers.data?.transfer_requests || [];
+    if (!requests.length) {
+      const empty = document.createElement("div");
+      empty.className = "empty";
+      empty.textContent = "Noch keine Überweisungen in dieser Partie.";
+      transferList.append(empty);
+    }
+    for (const request of requests) {
+      const item = document.createElement("div");
+      item.className = "request";
+      const details = document.createElement("div");
+      const title = document.createElement("strong");
+      title.textContent = request.sender_name + " → " + request.recipient_name + " · " + formatCredits(request.amount);
+      const meta = document.createElement("small");
+      meta.textContent = (request.subject || "Ohne Betreff") + " · " + formatDateTime(request.created_at);
+      const status = document.createElement("small");
+      status.textContent = ({pending:"Ausstehend",confirmed:"Bestätigt",rejected:"Abgelehnt"})[request.status] || request.status;
+      details.append(title, meta, status);
+      item.append(details);
+      transferList.append(item);
+    }
+    const missionList = $("admin-mission-list");
+    missionList.replaceChildren();
+    for (const mission of (missions.data?.missions || [])) {
+      const item = document.createElement("div");
+      item.className = "request";
+      const details = document.createElement("div");
+      const title = document.createElement("strong");
+      title.textContent = mission.title;
+      const meta = document.createElement("small");
+      meta.textContent = mission.assigned ? "Vergeben an " + mission.player_name + " · " + formatDateTime(mission.assigned_at) : "Noch nicht vergeben";
+      const description = document.createElement("small");
+      description.textContent = mission.description;
+      details.append(title, meta, description);
+      item.append(details);
+      missionList.append(item);
+    }
+  } catch (error) {
+    notice("admin-monitor-notice", "error", "Partie-Monitor konnte nicht geladen werden: " + error.message);
+  }
+}
+
 function showAdmin(sessionIdValue, displayName = "") {
   sessionId = sessionIdValue;
   if (displayName) localStorage.setItem("spaceControl.adminSessionName", displayName);
@@ -82,8 +357,9 @@ function showAdmin(sessionIdValue, displayName = "") {
   $("session-state").textContent = savedName + " · " + sessionId;
   loadRequests();
   loadRoster();
+  loadAdminMonitor();
   if (adminPollHandle) clearInterval(adminPollHandle);
-  adminPollHandle = setInterval(() => { if (!document.hidden) { loadRequests(); loadRoster(); } }, 5000);
+  adminPollHandle = setInterval(() => { if (!document.hidden) { loadRequests(); loadRoster(); loadAdminMonitor(); } }, 5000);
 }
 async function checkPlayerStatus() {
   if (!currentUser || playerStatusCheckInFlight) return;
@@ -114,7 +390,7 @@ async function checkPlayerStatus() {
       setTextIfChanged("player-name", request.nickname);
       setTextIfChanged("player-state", "Du bist für diese Partie freigegeben.");
       const { data: member, error: memberError } = await supabaseClient
-        .from("session_members").select("id").eq("session_id", request.session_id)
+        .from("session_members").select("id,nickname,status").eq("session_id", request.session_id)
         .eq("user_id", currentUser.id).eq("status", "active").maybeSingle();
       if (memberError) throw memberError;
       if (!member) {
@@ -127,21 +403,15 @@ async function checkPlayerStatus() {
         return;
       }
       const { data: sessionInfo, error: sessionError } = await supabaseClient
-        .from("game_sessions").select("id,display_name,status").eq("id", request.session_id).maybeSingle();
+        .from("game_sessions").select("id,display_name,status,started_at,created_at,game_id").eq("id", request.session_id).maybeSingle();
       if (sessionError) throw sessionError;
       if (sessionInfo) {
-        setTextIfChanged("player-session-name", sessionInfo.display_name);
-        setTextIfChanged("player-session-id", sessionInfo.id);
         setTextIfChanged("player-state", sessionInfo.status === "active"
-          ? "Die Partie wurde gestartet. Viel Erfolg!"
+          ? "Die Partie läuft. Viel Erfolg!"
           : "Du bist freigegeben. Die Spielleitung startet die Partie, sobald sie bereit ist.");
+        await loadPlayerCockpit(request.session_id, member.id, sessionInfo);
       }
-      const { data: account, error: accountError } = await supabaseClient
-        .from("accounts").select("balance").eq("session_id", request.session_id)
-        .eq("member_id", member.id).maybeSingle();
-      if (accountError) throw accountError;
-      if (account) setTextIfChanged("player-balance", Number(account.balance).toLocaleString("de-DE") + " Credits");
-      notice("player-notice", "ok", "Teilnahme bestätigt. Du kannst diese Seite jederzeit erneut öffnen.");
+            notice("player-notice", "ok", "Teilnahme bestätigt. Du kannst diese Seite jederzeit erneut öffnen.");      notice("player-notice", "ok", "Teilnahme bestätigt. Du kannst diese Seite jederzeit erneut öffnen.");
     } else if (request.status === "pending") {
       $("join-panel").classList.remove("hidden");
       $("join-form").classList.add("hidden");
@@ -305,6 +575,7 @@ async function startSession() {
     if (error) throw error;
     notice("roster-notice", "ok", "Partie gestartet. Die Spielerhandys erhalten die Änderung automatisch.");
     await loadRoster();
+    await loadAdminMonitor();
   } catch (error) {
     notice("roster-notice", "error", "Partie konnte nicht gestartet werden: " + error.message);
     setBusy(button, false, "Partie starten");
@@ -340,7 +611,7 @@ $("create-form").addEventListener("submit", async (event) => {
     });
     const createdId = data.session?.session_id;
     if (!createdId) throw new Error("Das Backend hat keine Partie-ID geliefert.");
-    showAdmin(createdId);
+    showAdmin(createdId, $("session-name").value.trim());
     notice("invite-notice", "info", "Partie erstellt. Erzeuge jetzt den gemeinsamen QR-Code.");
   } catch (error) {
     notice("create-notice", "error", error.message);
@@ -368,27 +639,64 @@ $("copy-link").addEventListener("click", async () => {
 $("refresh-requests").addEventListener("click", () => { loadRequests(); loadRoster(); });
 $("start-session")?.addEventListener("click", startSession);
 $("player-refresh").addEventListener("click", checkPlayerStatus);
-$("player-leave").addEventListener("click", async () => {
-  const playerSessionId = localStorage.getItem("spaceControl.playerSessionId");
-  if (!playerSessionId) return;
-  if (!window.confirm("Möchtest du diese Partie wirklich verlassen? Dein Kontostand und die Buchungshistorie bleiben erhalten.")) return;
-  setBusy($("player-leave"), true, "Austritt wird ausgeführt …");
+document.querySelectorAll("[data-player-view]").forEach(button => {
+  button.addEventListener("click", () => setPlayerView(button.dataset.playerView));
+});
+$("transfer-form").addEventListener("submit", async (event) => {
+  event.preventDefault();
+  clearNotice("transfer-notice");
+  const button = $("transfer-submit");
+  const recipient = $("transfer-recipient").value;
+  const amount = Number($("transfer-amount").value);
+  const subject = $("transfer-subject").value.trim();
+  const reserved = (playerDashboardData?.transfer_requests || [])
+    .filter(r => r.status === "pending" && r.sender_member_id === playerMemberId)
+    .reduce((sum, r) => sum + Number(r.amount || 0), 0);
+  const available = Number(playerDashboardData?.balance || 0) - reserved;
+  if (!recipient) { notice("transfer-notice", "error", "Bitte wähle einen Empfänger aus."); return; }
+  if (!Number.isInteger(amount) || amount < 50 || amount % 50 !== 0 || amount > available) {
+    notice("transfer-notice", "error", "Bitte gib einen Betrag in 50er-Schritten ein, der dein verfügbares Guthaben nicht übersteigt.");
+    return;
+  }
+  setBusy(button, true, "Überweisung wird angefragt …");
   try {
-    const { data, error } = await supabaseClient.rpc("leave_own_session", { p_session_id: playerSessionId });
+    const { error } = await supabaseClient.rpc("create_transfer_request", {
+      p_session_id: localStorage.getItem("spaceControl.playerSessionId"),
+      p_recipient_member_id: recipient,
+      p_amount: amount,
+      p_subject: subject || null
+    });
     if (error) throw error;
-    localStorage.removeItem("spaceControl.playerSessionId");
-    localStorage.removeItem("spaceControl.playerNickname");
-    localStorage.removeItem("spaceControl.pendingJoinToken");
-    if (playerPollHandle) { clearInterval(playerPollHandle); playerPollHandle = null; }
-    $("player-panel").classList.add("hidden");
-    $("admin-create").classList.remove("hidden");
-    notice("create-notice", "ok", "Du hast die Partie verlassen. Dein Konto und deine Buchungshistorie bleiben erhalten.");
+    $("transfer-amount").value = "";
+    $("transfer-subject").value = "";
+    notice("transfer-notice", "ok", "Überweisungsanfrage gesendet. Sie wird erst nach Bestätigung des Empfängers verbucht.");
+    await checkPlayerStatus();
   } catch (error) {
-    notice("player-notice", "error", "Austritt nicht möglich: " + error.message);
-    setBusy($("player-leave"), false, "Partie verlassen");
+    notice("transfer-notice", "error", error.message);
+  } finally {
+    setBusy(button, false, "Überweisung anfragen");
   }
 });
-$("resume-session").addEventListener("click", () => showAdmin(sessionId));
+$("draw-mission").addEventListener("click", async () => {
+  const button = $("draw-mission");
+  setBusy(button, true, "Auftrag wird gezogen …");
+  clearNotice("mission-notice");
+  try {
+    const { data, error } = await supabaseClient.rpc("draw_secret_mission", {
+      p_session_id: localStorage.getItem("spaceControl.playerSessionId")
+    });
+    if (error) throw error;
+    renderMission(data?.mission || null);
+    notice("mission-notice", "ok", data?.already_assigned
+      ? "Dein bereits zugewiesener Auftrag wurde wieder angezeigt."
+      : "Dein geheimer Auftrag wurde endgültig zugewiesen.");
+  } catch (error) {
+    notice("mission-notice", "error", error.message);
+  } finally {
+    setBusy(button, false, "Geheimen Auftrag ziehen");
+  }
+});
+$("refresh-admin-monitor")?.addEventListener("click", loadAdminMonitor);$("resume-session").addEventListener("click", () => showAdmin(sessionId));
 $("new-session").addEventListener("click", () => {
   localStorage.removeItem("spaceControl.adminSessionId");
   sessionId = "";
