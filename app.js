@@ -111,7 +111,7 @@ function renderPlayerRoster() {
   if (!list) return;
   list.replaceChildren();
   const active = playerRosterData.filter(member => member.status === "active");
-  $("player-player-count").textContent = String(active.length);
+  $("player-player-count").textContent = String(active.filter(member => member.id !== playerMemberId).length);
   if (!active.length) {
     const empty = document.createElement("div");
     empty.className = "empty";
