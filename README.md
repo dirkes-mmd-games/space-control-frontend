@@ -67,6 +67,6 @@ Ein QR-Code enthält einen Link auf diese Website mit dem Einladungstoken als Qu
 
 ## Technischer Status und Grenzen
 
-Der bisherige Einladungs- und Beitrittsablauf wurde vom Projektverantwortlichen erfolgreich mit iPhone und Android getestet. Die neue Player-Cockpit-Oberfläche liegt auf dem Feature-Branch `feature/player-cockpit-v1` und ist noch nicht auf GitHub Pages veröffentlicht. Das neue Backend ist bereits im Live-Supabase-Projekt `mbztajfcqunkbuismkkt` migriert und wurde mit synthetischen, vollständig zurückgerollten Datenbanktests geprüft. Der End-to-End-Test der neuen Konto- und Auftragsfunktionen auf realen Geräten steht noch aus.
+Der bisherige Einladungs- und Beitrittsablauf wurde vom Projektverantwortlichen erfolgreich mit iPhone und Android getestet. Die Player-Cockpit-Oberfläche wurde in `main` übernommen und der GitHub-Pages-Build einschließlich Deployment war erfolgreich (15.11.2026, Run 43765232785). Das Backend ist bereits im Live-Supabase-Projekt `mbztajfcqunkbuismkkt` migriert und wurde mit synthetischen, vollständig zurückgerollten Datenbanktests geprüft. Der End-to-End-Test der neuen Konto- und Auftragsfunktionen auf realen Geräten steht noch aus.
 
 Die QR-Code-Erzeugung verwendet QRCode.js über cdnjs. Für einen produktiven Einsatz sollten zusätzlich restriktive CORS-Regeln, Rate-Limits und ein Wiederherstellungsweg für anonyme Identitäten geprüft werden.
