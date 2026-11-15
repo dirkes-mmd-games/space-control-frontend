@@ -360,7 +360,7 @@ $("copy-link").addEventListener("click", async () => {
 });
 
 $("refresh-requests").addEventListener("click", () => { loadRequests(); loadRoster(); });
-$("start-session").addEventListener("click", startSession);
+$("start-session")?.addEventListener("click", startSession);
 $("player-refresh").addEventListener("click", checkPlayerStatus);
 $("player-leave").addEventListener("click", async () => {
   const playerSessionId = localStorage.getItem("spaceControl.playerSessionId");
