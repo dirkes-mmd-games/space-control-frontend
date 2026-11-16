@@ -57,3 +57,15 @@ body.join-mode #resume-panel { display: none !important; }
 @media(max-width:520px){.mission-card{min-height:475px;padding:21px 19px 18px}.mission-card-emblem{margin:32px auto 22px;width:82px;height:82px;font-size:42px}.mission-card h2{font-size:26px}}
 .admin-monitor{margin-top:18px}
 @media(max-width:520px){.player-shell{padding:15px}.player-nav-button{font-size:11px}.player-stat strong{font-size:19px}.player-topline{align-items:flex-start}.player-session-meta{align-items:flex-start;flex-direction:column;gap:4px}}
+
+/* Globale Eingangsbenachrichtigung für Überweisungen */
+.transfer-modal-backdrop{position:fixed;inset:0;z-index:1000;display:grid;place-items:center;padding:18px;background:rgba(3,8,16,.82);backdrop-filter:blur(7px)}
+.transfer-modal{width:min(100%,440px);max-height:calc(100vh - 36px);overflow:auto;padding:28px 24px 24px;text-align:center;border:1px solid #6686ad;border-radius:22px;background:radial-gradient(ellipse at 50% 0%,#29496d 0,#172a41 48%,#101b2a 100%);box-shadow:0 28px 90px #000b,inset 0 0 0 1px #ffffff0b}
+.transfer-modal-symbol{width:58px;height:58px;display:grid;place-items:center;margin:0 auto 16px;border:1px solid #8fbaff;border-radius:50%;background:#244568;color:#d9eaff;font-size:30px}
+.transfer-modal h2{font-size:25px;margin:16px 0 8px}
+.transfer-modal-sender{color:#d8e6f7;margin:12px 0 2px}
+.transfer-modal-amount{display:block;font-size:clamp(30px,8vw,40px);color:#b8d5ff;font-variant-numeric:tabular-nums;margin:8px 0}
+.transfer-modal-hint{font-size:12px;color:#9eb2ca;line-height:1.5;margin:18px 0}
+.transfer-modal-actions{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:18px}
+.transfer-modal-actions button{width:100%;padding:14px 10px}
+@media(max-width:420px){.transfer-modal{padding:24px 18px 20px}.transfer-modal-actions{grid-template-columns:1fr}}
