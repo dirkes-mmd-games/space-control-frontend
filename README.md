@@ -1,4 +1,4 @@
-# Space Control – Browser-Frontend\n\n**Frontend-Version:** 1.1.1  \n**Stand:** 16. November 2026  \n**Cache-Kennung der ausgelieferten HTML-Referenzen:** `20261116-4`
+# Space Control – Browser-Frontend\n\n**Frontend-Version:** 1.2.0  \n**Stand:** 16. November 2026  \n**Cache-Kennung der ausgelieferten HTML-Referenzen:** `20261116-5`
 
 Mobile Weboberfläche und Spielleiteransicht für den Hybrid-Demonstrator. Die Anwendung ist eine statische Website und läuft am Laptop sowie auf Smartphones direkt im Browser; es wird keine native App benötigt.
 
@@ -64,6 +64,10 @@ Die Liste offener Anfragen wird über die Tabelle `join_requests` gelesen. Die v
 
    https://dirkes-mmd-games.github.io/space-control-frontend/
 
+Direkter Einstieg für die Spielleitung (im Browser, in dem die Partie erstellt wurde):
+
+   https://dirkes-mmd-games.github.io/space-control-frontend/?admin=1
+
 Ein QR-Code enthält einen Link auf diese Website mit dem Einladungstoken als Query-Parameter. Der Token ist ein kurzlebiges Zugangsmittel für die Beitrittsanfrage und wird nach erfolgreicher Übermittlung aus der Adresszeile entfernt.
 
 ## Technischer Status und Grenzen
@@ -80,9 +84,9 @@ Die QR-Code-Erzeugung verwendet QRCode.js über cdnjs. Für einen produktiven Ei
 | Technischer Demonstrator | V1.1 | Fortschreibung des Player-Cockpit-Basisstands |
 | Frontend | V1.1.1 | Globale Überweisungsbenachrichtigung, bereinigte Kontoansicht, Auftragskarte |
 | Backend | V1.1 | Überweisungsanfragen ohne Guthabenreservierung; Bestätigung bucht atomar |
-| HTML-/Asset-Cache | `20261116-4` | Cache-Kennung, keine fachliche Versionsnummer |
+| HTML-/Asset-Cache | `20261116-5` | Cache-Kennung, keine fachliche Versionsnummer |
 
 V1.1 bezeichnet den dokumentierten Quellcode-/Funktionsstand in GitHub, nicht automatisch eine bestätigte Live-Auslieferung über GitHub Pages. Die fachliche Produktdokumentation bleibt das Lastenheft 0.9 im Hauptrepository; diese Frontend-Version trifft keine Entscheidung über eine hybride Produktentwicklung.
 
 
-**Patch V1.1.1:** Wechselnden Statushinweis im Spieler-Cockpit entfernt; Cache-Kennung auf `20261116-4` erhöht. Keine Änderung an Spielabläufen oder Backend erforderlich.
+**Frontend V1.2.0:** Cosmic-Design mit sternen-/nebelartigem Hintergrund, violett-blauen Kontrollflächen und angepassten Kontrasten. Direkter Admin-Einstieg über `/?admin=1`; bei vorhandenem Admin-Browserkontext wird die gespeicherte Partie direkt geöffnet. Die Adminberechtigung wird weiterhin serverseitig geprüft. Cache-Kennung: `20261116-5`.
