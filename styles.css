@@ -69,3 +69,35 @@ body.join-mode #resume-panel { display: none !important; }
 .transfer-modal-actions{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:18px}
 .transfer-modal-actions button{width:100%;padding:14px 10px}
 @media(max-width:420px){.transfer-modal{padding:24px 18px 20px}.transfer-modal-actions{grid-template-columns:1fr}}
+
+/* SPACE CONTROL · Cosmic bridge visual direction */
+:root{color-scheme:dark;background:#050713;color:#f1efff}
+html{min-height:100%;background:#050713}
+body{position:relative;isolation:isolate;min-height:100vh;background:radial-gradient(ellipse at 50% 42%,rgba(119,76,151,.24),transparent 48%),radial-gradient(ellipse at 15% 70%,rgba(57,91,151,.22),transparent 42%),radial-gradient(ellipse at 82% 18%,rgba(62,66,135,.2),transparent 38%),linear-gradient(155deg,#080b1b 0%,#111027 46%,#050713 100%);background-attachment:fixed}
+body::before{content:"";position:fixed;inset:0;z-index:-1;pointer-events:none;opacity:.82;background:radial-gradient(1px 1px at 8% 14%,#fff 98%,transparent),radial-gradient(1px 1px at 17% 68%,#d8c9ff 98%,transparent),radial-gradient(2px 2px at 31% 27%,#fff 98%,transparent),radial-gradient(1px 1px at 43% 81%,#fff 98%,transparent),radial-gradient(1px 1px at 56% 16%,#d9d8ff 98%,transparent),radial-gradient(2px 2px at 69% 53%,#fff 98%,transparent),radial-gradient(1px 1px at 82% 29%,#fff 98%,transparent),radial-gradient(1px 1px at 94% 76%,#d8c9ff 98%,transparent),radial-gradient(ellipse at 47% 47%,rgba(201,147,199,.13),transparent 22%),radial-gradient(ellipse at 36% 57%,rgba(126,132,197,.18),transparent 27%),linear-gradient(112deg,transparent 28%,rgba(163,124,181,.08) 43%,rgba(221,190,206,.12) 50%,rgba(107,111,164,.08) 57%,transparent 72%)}
+.top{align-items:center}
+.top-actions{display:flex;align-items:center;gap:16px}
+.admin-shortcut{display:inline-flex;align-items:center;padding:8px 12px;border:1px solid rgba(168,153,222,.42);border-radius:999px;background:rgba(20,20,43,.66);color:#d8d0ff;text-decoration:none;font-size:12px;font-weight:700;letter-spacing:.04em}
+.admin-shortcut:hover{background:rgba(76,66,119,.5);border-color:#b7a6f0}
+.brand{color:#c0b5f5;text-shadow:0 0 22px rgba(166,143,255,.38)}
+.hero h1{color:#f1edff;text-shadow:0 0 34px rgba(170,137,238,.35);letter-spacing:.035em}
+.hero p,.muted{color:#c1c3dc}
+.panel{background:linear-gradient(145deg,rgba(24,25,53,.84),rgba(10,14,32,.88));border:1px solid rgba(151,143,204,.34);box-shadow:0 18px 60px rgba(0,0,0,.4),inset 0 1px 0 rgba(255,255,255,.055);backdrop-filter:blur(14px)}
+.panel h2,.player-view h3,.admin-monitor h3{color:#f0edff}
+.tag{color:#d4c9ff;border-color:rgba(174,157,239,.46);background:rgba(112,91,173,.12)}
+button{background:linear-gradient(135deg,#9a83e8,#6c8eea);color:#090d20;box-shadow:0 5px 20px rgba(108,120,219,.18)}
+button.secondary{background:rgba(42,45,79,.9);color:#e8e4ff;border-color:rgba(150,143,207,.35);box-shadow:none}
+input,select{background:rgba(7,11,27,.82);border-color:rgba(135,137,190,.43);color:#f3f0ff}
+input:focus,select:focus,button:focus-visible{outline-color:#c3b1ff}
+.status-line,.connection{color:#b9bdd8}
+.player-session-card{background:linear-gradient(135deg,rgba(62,54,105,.78),rgba(17,30,58,.9));border-color:rgba(163,149,223,.44)}
+.player-nav{background:rgba(8,12,29,.82);border-color:rgba(145,137,202,.32);backdrop-filter:blur(12px)}
+.player-nav-button.active{background:linear-gradient(135deg,rgba(105,87,163,.75),rgba(52,83,139,.8));border-color:rgba(190,174,255,.45)}
+.player-stat,.balance-card,.transfer-form,.rules-details,.request,.empty{background:rgba(9,14,31,.68);border-color:rgba(131,137,190,.32)}
+.player-stat span,.balance-card span{color:#c1c3dc}
+.balance-card small{color:#c6baff}
+.mission-empty{background:radial-gradient(ellipse at 50% 0%,rgba(133,103,183,.22),transparent 60%),rgba(12,16,35,.82);border-color:rgba(181,161,231,.4)}
+.mission-card{background:radial-gradient(ellipse at 50% 35%,rgba(120,105,183,.42),transparent 48%),linear-gradient(155deg,#1c1b3d 0%,#10152d 62%,#0b1225 100%);border-color:#c5b47d}
+.start-box{background:rgba(70,62,111,.2);border-color:rgba(162,149,220,.4)}
+.foot{color:#9298bc}
+@media(max-width:520px){.top{align-items:flex-start}.top-actions{gap:8px;flex-direction:column;align-items:flex-end}.admin-shortcut{padding:7px 10px}}
