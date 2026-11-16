@@ -1,4 +1,4 @@
-# Space Control – Browser-Frontend\n\n**Frontend-Version:** 1.1  \n**Stand:** 16. November 2026  \n**Cache-Kennung der ausgelieferten HTML-Referenzen:** `20261116-3`
+# Space Control – Browser-Frontend\n\n**Frontend-Version:** 1.1.1  \n**Stand:** 16. November 2026  \n**Cache-Kennung der ausgelieferten HTML-Referenzen:** `20261116-4`
 
 Mobile Weboberfläche und Spielleiteransicht für den Hybrid-Demonstrator. Die Anwendung ist eine statische Website und läuft am Laptop sowie auf Smartphones direkt im Browser; es wird keine native App benötigt.
 
@@ -14,6 +14,7 @@ Mobile Weboberfläche und Spielleiteransicht für den Hybrid-Demonstrator. Die A
 - Nach dem Partie-Start wechselt die Spieleroberfläche in ein Cockpit mit drei Ansichten: Partie-Übersicht, Konto und geheime Aufträge.
 - Die Übersicht zeigt Partiename, Mitspieler, Spielstatus, Startzeit und laufende Spielzeit. Die technische Partienummer wird nur verkürzt angezeigt.
 - Im Konto können Spieler Überweisungsanfragen in 50-Credit-Schritten stellen. Offene Anfragen reservieren kein Guthaben. Der Empfänger bestätigt oder lehnt ab; erst nach Bestätigung werden die Konten atomar gebucht.\n- Eingehende offene Überweisungsanfragen öffnen unabhängig von der gerade angezeigten Spieleransicht einen Dialog. Der Empfänger kann direkt dort annehmen oder ablehnen. Die Erkennung erfolgt über das regelmäßige Dashboard-Polling (im aktiven Browser alle zehn Sekunden), nicht über Push oder Supabase Realtime.\n- Die Kontoansicht zeigt als zentrale Bewegungsübersicht die gebuchten Transaktionen; separat erscheinen nur offene eingehende Anfragen, für die eine Entscheidung aussteht.
+- Im Spieler-Cockpit wird kein wechselnder Statushinweis neben der Cockpit-Kennzeichnung eingeblendet. Dadurch bleibt die Kopfzeile während der automatischen Aktualisierung unverändert und ruhig.
 - Spieler sehen ihre eigenen Transaktionen und beteiligten Überweisungen. Die Spielleitung erhält einen Partie-Monitor mit vollständiger Transaktionshistorie.
 - Pro Partie gibt es zehn geheime Beispielaufträge. Die Ziehung erfolgt zufällig ohne Zurücklegen; jeder Spieler erhält höchstens einen Auftrag. Der Auftrag kann nicht gewechselt werden und wird im Spielercockpit als gestaltete, responsive Auftragskarte dargestellt.
 - Die Spielleitung kann alle zehn Aufträge und deren Vergabestatus einsehen.
@@ -77,8 +78,11 @@ Die QR-Code-Erzeugung verwendet QRCode.js über cdnjs. Für einen produktiven Ei
 | Komponente | Stand am 16.11.2026 | Hinweis |
 |---|---:|---|
 | Technischer Demonstrator | V1.1 | Fortschreibung des Player-Cockpit-Basisstands |
-| Frontend | V1.1 | Globale Überweisungsbenachrichtigung, bereinigte Kontoansicht, Auftragskarte |
+| Frontend | V1.1.1 | Globale Überweisungsbenachrichtigung, bereinigte Kontoansicht, Auftragskarte |
 | Backend | V1.1 | Überweisungsanfragen ohne Guthabenreservierung; Bestätigung bucht atomar |
-| HTML-/Asset-Cache | `20261116-3` | Cache-Kennung, keine fachliche Versionsnummer |
+| HTML-/Asset-Cache | `20261116-4` | Cache-Kennung, keine fachliche Versionsnummer |
 
 V1.1 bezeichnet den dokumentierten Quellcode-/Funktionsstand in GitHub, nicht automatisch eine bestätigte Live-Auslieferung über GitHub Pages. Die fachliche Produktdokumentation bleibt das Lastenheft 0.9 im Hauptrepository; diese Frontend-Version trifft keine Entscheidung über eine hybride Produktentwicklung.
+
+
+**Patch V1.1.1:** Wechselnden Statushinweis im Spieler-Cockpit entfernt; Cache-Kennung auf `20261116-4` erhöht. Keine Änderung an Spielabläufen oder Backend erforderlich.
