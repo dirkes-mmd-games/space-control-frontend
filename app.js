@@ -132,47 +132,39 @@ function renderPlayerRoster() {
 }
 function renderTransferRequests() {
   const list = $("player-transfer-requests");
-  if (!list) return;
+  const section = $("player-pending-transfer-section");
+  if (!list || !section) return;
   list.replaceChildren();
-  const requests = playerDashboardData?.transfer_requests || [];
-  // Pending requests do not reserve funds; the balance changes only on confirmation.
+  const requests = (playerDashboardData?.transfer_requests || [])
+    .filter(request => request.is_incoming && request.status === "pending");
+  section.classList.toggle("hidden", requests.length === 0);
   const available = Number(playerDashboardData?.balance || 0);
   setTextIfChanged("player-transfer-available", "Verfügbar für Überweisungen: " + formatCredits(available));
   const amountInput = $("transfer-amount");
   if (amountInput) amountInput.max = String(available);
-  if (!requests.length) {
-    const empty = document.createElement("div");
-    empty.className = "empty";
-    empty.textContent = "Keine Überweisungen vorhanden.";
-    list.append(empty);
-  }
   for (const request of requests) {
     const item = document.createElement("div");
     item.className = "request";
     const details = document.createElement("div");
     const title = document.createElement("strong");
-    title.textContent = (request.is_incoming ? "Von " + request.sender_name : "An " + request.recipient_name) +
-      " · " + formatCredits(request.amount);
+    title.textContent = "Von " + request.sender_name + " · " + formatCredits(request.amount);
     const meta = document.createElement("small");
     meta.textContent = (request.subject || "Ohne Betreff") + " · " + formatDateTime(request.created_at);
     const status = document.createElement("small");
-    const labels = { pending: "Wartet auf Entscheidung", confirmed: "Bestätigt", rejected: "Abgelehnt" };
-    status.textContent = labels[request.status] || request.status;
+    status.textContent = "Wartet auf deine Entscheidung";
     details.append(title, meta, status);
     item.append(details);
-    if (request.is_incoming && request.status === "pending") {
-      const actions = document.createElement("div");
-      actions.className = "actions";
-      const accept = document.createElement("button");
-      accept.textContent = "Bestätigen";
-      accept.addEventListener("click", () => decideTransfer(request.id, true, accept));
-      const reject = document.createElement("button");
-      reject.className = "danger";
-      reject.textContent = "Ablehnen";
-      reject.addEventListener("click", () => decideTransfer(request.id, false, reject));
-      actions.append(accept, reject);
-      item.append(actions);
-    }
+    const actions = document.createElement("div");
+    actions.className = "actions";
+    const accept = document.createElement("button");
+    accept.textContent = "Bestätigen";
+    accept.addEventListener("click", () => decideTransfer(request.id, true, accept));
+    const reject = document.createElement("button");
+    reject.className = "danger";
+    reject.textContent = "Ablehnen";
+    reject.addEventListener("click", () => decideTransfer(request.id, false, reject));
+    actions.append(accept, reject);
+    item.append(actions);
     list.append(item);
   }
 }
