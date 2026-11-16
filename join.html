@@ -6,7 +6,7 @@
   <meta name="theme-color" content="#0a101b">
   <meta name="description" content="Space Control – Partie erstellen und Spieler einladen">
   <title>Space Control – Spielerbeitritt</title>
-  <link rel="stylesheet" href="./styles.css?v=20261116-1">
+  <link rel="stylesheet" href="./styles.css?v=20261116-2">
   <script src="./config.js"></script>
   <script>
     window.addEventListener("error", function (event) {
@@ -24,7 +24,7 @@
   </script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js" defer></script>
-  <script src="./app.js?v=20261116-1" defer></script>
+  <script src="./app.js?v=20261116-2" defer></script>
 </head>
 <body class="join-mode">
   <main class="shell">
@@ -79,8 +79,10 @@
           <button id="transfer-submit" class="wide" type="submit">Überweisung anfragen</button>
         </form>
         <div id="transfer-notice" class="notice" role="status" aria-live="polite"></div>
-        <h3>Überweisungen</h3>
-        <div id="player-transfer-requests" class="request-list"><div class="empty">Keine Überweisungen vorhanden.</div></div>
+        <section id="player-pending-transfer-section" class="pending-transfer-section hidden" aria-live="polite">
+          <h3>Offene Anfragen an dich</h3>
+          <div id="player-transfer-requests" class="request-list"></div>
+        </section>
         <h3>Transaktionshistorie</h3>
         <div id="player-transaction-history" class="request-list"><div class="empty">Noch keine Buchungen vorhanden.</div></div>
       </section>
@@ -90,12 +92,24 @@
           <p class="muted">Ziehe einen geheimen Auftrag. Er wird dir endgültig zugewiesen und kann von keinem anderen Spieler mehr gezogen werden.</p>
           <button id="draw-mission" class="wide">Geheimen Auftrag ziehen</button>
         </div>
-        <div id="player-mission-card" class="mission-card hidden">
-          <span class="tag">Dein geheimer Auftrag</span>
-          <h2 id="player-mission-title">–</h2>
-          <p id="player-mission-description" class="muted">–</p>
-          <small id="player-mission-assigned" class="muted"></small>
-        </div>
+        <article id="player-mission-card" class="mission-card hidden" aria-labelledby="player-mission-title">
+          <div class="mission-card-corner mission-card-corner-top"><span>SC</span><span>✦</span></div>
+          <div class="mission-card-heading">
+            <span class="mission-card-kicker">SPACE CONTROL</span>
+            <span class="mission-card-class">GEHEIMAUFTRAG</span>
+          </div>
+          <div class="mission-card-emblem" aria-hidden="true">✦</div>
+          <div class="mission-card-content">
+            <span class="mission-card-label">Dein persönliches Missionsziel</span>
+            <h2 id="player-mission-title">–</h2>
+            <p id="player-mission-description" class="muted">–</p>
+          </div>
+          <div class="mission-card-footer">
+            <span>VERTRAULICH · NUR FÜR DICH</span>
+            <small id="player-mission-assigned" class="muted"></small>
+          </div>
+          <div class="mission-card-corner mission-card-corner-bottom"><span>✦</span><span>SC</span></div>
+        </article>
         <div id="mission-notice" class="notice" role="status" aria-live="polite"></div>
       </section>
       <div id="player-notice" class="notice" role="status" aria-live="polite"></div>
