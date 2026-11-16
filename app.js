@@ -168,6 +168,45 @@ function renderTransferRequests() {
     list.append(item);
   }
 }
+function renderIncomingTransferModal() {
+  let overlay = $("incoming-transfer-modal");
+  const requests = (playerDashboardData?.transfer_requests || [])
+    .filter(request => request.is_incoming && request.status === "pending");
+  if (!requests.length) {
+    overlay?.remove();
+    return;
+  }
+  if (!overlay) {
+    overlay = document.createElement("div");
+    overlay.id = "incoming-transfer-modal";
+    overlay.className = "transfer-modal-backdrop";
+    overlay.setAttribute("role", "presentation");
+    overlay.innerHTML = `
+      <section class="transfer-modal" role="dialog" aria-modal="true" aria-labelledby="incoming-transfer-title">
+        <div class="transfer-modal-symbol" aria-hidden="true">↙</div>
+        <span class="tag">Neue Überweisung</span>
+        <h2 id="incoming-transfer-title">Du hast Geld erhalten</h2>
+        <p id="incoming-transfer-sender" class="transfer-modal-sender"></p>
+        <strong id="incoming-transfer-amount" class="transfer-modal-amount"></strong>
+        <p id="incoming-transfer-subject" class="muted"></p>
+        <p class="transfer-modal-hint">Die Gutschrift erfolgt erst, wenn du die Überweisung bestätigst.</p>
+        <div id="incoming-transfer-error" class="notice" role="alert"></div>
+        <div class="transfer-modal-actions">
+          <button id="incoming-transfer-accept" type="button">Annehmen</button>
+          <button id="incoming-transfer-reject" class="danger" type="button">Ablehnen</button>
+        </div>
+      </section>`;
+    document.body.append(overlay);
+  }
+  const request = requests[0];
+  setTextIfChanged("incoming-transfer-sender", "Von " + request.sender_name);
+  setTextIfChanged("incoming-transfer-amount", formatCredits(request.amount));
+  setTextIfChanged("incoming-transfer-subject", request.subject || "Ohne Betreff");
+  const accept = $("incoming-transfer-accept");
+  const reject = $("incoming-transfer-reject");
+  accept.onclick = () => decideTransfer(request.id, true, accept, true);
+  reject.onclick = () => decideTransfer(request.id, false, reject, true);
+}
 function renderTransactionHistory() {
   const list = $("player-transaction-history");
   if (!list) return;
@@ -235,6 +274,7 @@ async function loadPlayerCockpit(sessionIdValue, memberId, sessionInfo) {
   setTextIfChanged("player-account-balance", formatCredits(playerDashboardData.balance));
   renderPlayerRoster();
   renderTransferRequests();
+  renderIncomingTransferModal();
   renderTransactionHistory();
   renderMission(missionResult.data?.mission || null);
   const nav = $("player-nav");
@@ -268,7 +308,7 @@ async function loadPlayerCockpit(sessionIdValue, memberId, sessionInfo) {
     }
   }
 }
-async function decideTransfer(requestId, accept, button) {
+async function decideTransfer(requestId, accept, button, modalMode = false) {
   setBusy(button, true, accept ? "Wird bestätigt …" : "Wird abgelehnt …");
   clearNotice("transfer-notice");
   try {
@@ -280,8 +320,12 @@ async function decideTransfer(requestId, accept, button) {
     notice("transfer-notice", "ok", accept ? "Überweisung bestätigt und verbucht." : "Überweisung abgelehnt.");
     await checkPlayerStatus();
   } catch (error) {
-    notice("transfer-notice", "error", error.message);
-    setBusy(button, false, accept ? "Bestätigen" : "Ablehnen");
+    if (modalMode) {
+      notice("incoming-transfer-error", "error", error.message);
+    } else {
+      notice("transfer-notice", "error", error.message);
+    }
+    setBusy(button, false, modalMode ? (accept ? "Annehmen" : "Ablehnen") : (accept ? "Bestätigen" : "Ablehnen"));
   }
 }
 async function loadAdminMonitor() {
