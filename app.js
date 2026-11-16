@@ -135,9 +135,8 @@ function renderTransferRequests() {
   if (!list) return;
   list.replaceChildren();
   const requests = playerDashboardData?.transfer_requests || [];
-  const available = Math.max(0, Number(playerDashboardData?.balance || 0) -
-    requests.filter(r => r.status === "pending" && r.sender_member_id === playerMemberId)
-      .reduce((sum, r) => sum + Number(r.amount || 0), 0));
+  // Pending requests do not reserve funds; the balance changes only on confirmation.
+  const available = Number(playerDashboardData?.balance || 0);
   setTextIfChanged("player-transfer-available", "Verfügbar für Überweisungen: " + formatCredits(available));
   const amountInput = $("transfer-amount");
   if (amountInput) amountInput.max = String(available);
@@ -673,10 +672,8 @@ $("transfer-form").addEventListener("submit", async (event) => {
   const recipient = $("transfer-recipient").value;
   const amount = Number($("transfer-amount").value);
   const subject = $("transfer-subject").value.trim();
-  const reserved = (playerDashboardData?.transfer_requests || [])
-    .filter(r => r.status === "pending" && r.sender_member_id === playerMemberId)
-    .reduce((sum, r) => sum + Number(r.amount || 0), 0);
-  const available = Number(playerDashboardData?.balance || 0) - reserved;
+  // Pending requests do not reserve funds; the recipient's confirmation books the transfer.
+  const available = Number(playerDashboardData?.balance || 0);
   if (!recipient) { notice("transfer-notice", "error", "Bitte wähle einen Empfänger aus."); return; }
   if (!Number.isInteger(amount) || amount < 50 || amount % 50 !== 0 || amount > available) {
     notice("transfer-notice", "error", "Bitte gib einen Betrag in 50er-Schritten ein, der dein verfügbares Guthaben nicht übersteigt.");
