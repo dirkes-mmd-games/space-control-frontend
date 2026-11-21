@@ -6,11 +6,11 @@
   <meta name="theme-color" content="#0a101b">
   <meta name="description" content="Space Control – Partie erstellen und Spieler einladen">
   <title>Space Control – Hybrid-Demonstrator</title>
-  <link rel="stylesheet" href="./styles.css?v=20261121-1">
+  <link rel="stylesheet" href="./styles.css?v=20261121-2">
   <script src="./config.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js" defer></script>
-  <script src="./app.js?v=20261121-1" defer></script>
+  <script src="./app.js?v=20261121-2" defer></script>
 </head>
 <body>
   <main class="shell">
@@ -105,7 +105,7 @@
       <p class="muted">Du erhältst die Adminberechtigung. Dein eigener Spielerplatz entsteht erst, wenn du später denselben QR-Code wie die anderen Spieler scannst.</p>
       <form id="create-form">
         <label class="field" for="session-name">Name der Partie</label><input id="session-name" name="session-name" maxlength="60" value="Space Control – Demonstrator" required>
-        <div class="row"><div><label class="field" for="max-members">Spielerplätze</label><select id="max-members" name="max-members"><option value="3" selected>3 Spieler</option><option value="2">2 Spieler</option></select></div><div><label class="field" for="game-id">Spiel</label><input id="game-id" value="space-control" disabled></div></div>
+        <div class="row"><div><label class="field" for="max-members">Spielerplätze</label><select id="max-members" name="max-members" disabled><option value="3" selected>3 Spieler</option></select></div><div><label class="field" for="game-id">Spiel</label><input id="game-id" value="space-control" disabled></div></div>
         <button class="wide" id="create-submit" type="submit">Partie erstellen</button>
       </form>
       <div id="create-notice" class="notice" role="status" aria-live="polite"></div>
