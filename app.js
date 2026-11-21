@@ -792,6 +792,16 @@ $("join-form").addEventListener("submit", async (event) => {
 
 async function boot() {
   try {
+    const bootParams = new URLSearchParams(location.search);
+    if (bootParams.get("reset") === "1") {
+      // Explicit clean entry: discard only this app's browser-side session pointers.
+      for (let i = localStorage.length - 1; i >= 0; i--) {
+        const key = localStorage.key(i);
+        if (key && key.startsWith("spaceControl.")) localStorage.removeItem(key);
+      }
+      sessionId = "";
+      currentToken = "";
+    }
     await ensureIdentity();
     const savedPlayerSession = localStorage.getItem("spaceControl.playerSessionId");
     if (currentToken) {
