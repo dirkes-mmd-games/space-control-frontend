@@ -666,7 +666,7 @@ $("create-form").addEventListener("submit", async (event) => {
     const data = await invoke("create_session", {
       game_id: "space-control",
       display_name: $("session-name").value.trim(),
-      max_members: Number($("max-members").value)
+      max_members: 3
     });
     const createdId = data.session?.session_id;
     if (!createdId) throw new Error("Das Backend hat keine Partie-ID geliefert.");
