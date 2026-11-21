@@ -824,15 +824,21 @@ async function boot() {
       }
       return;
     }
-    const adminMode = new URLSearchParams(location.search).get("admin") === "1";
+    const adminParams = new URLSearchParams(location.search);
+    const adminMode = adminParams.get("admin") === "1";
+    const forceNewSession = adminParams.get("new") === "1";
     if (adminMode) {
       $("player-panel").classList.add("hidden");
       $("join-panel").classList.add("hidden");
-      if (sessionId) showAdmin(sessionId);
-      else {
+      $("admin-panel").classList.add("hidden");
+      $("resume-panel").classList.add("hidden");
+      if (forceNewSession) {
         $("admin-create").classList.remove("hidden");
-        $("resume-panel").classList.add("hidden");
-        $("admin-panel").classList.add("hidden");
+        $("max-members").value = "3";
+      } else if (sessionId) {
+        showAdmin(sessionId);
+      } else {
+        $("admin-create").classList.remove("hidden");
       }
       return;
     }
